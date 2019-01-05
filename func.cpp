@@ -129,17 +129,7 @@ mp::Range mp::linear(const mp::Range &x, double m, double n)
 
 mp::Range mp::poly(const mp::Range &x, const mp::Range &coefs)
 {
-    mp::Range y(x.size());
-    double *y_data = y.data();
-    const double *x_data = x.data();
-    for(int i = 0; i < x.size(); ++i) {
-        double y_term = 0;
-        for(int j = 0; j < coefs.size(); ++j) {
-            y_term += ::pow(x_data[i], j) * coefs[j];
-        }
-        y_data[i] = y_term;
-    }
-    return y;
+    return Polynomial(coefs)(x);
 }
 
 mp::Range mp::polyexp(const mp::Range &x, const mp::Range &coefs, double s)
@@ -149,8 +139,10 @@ mp::Range mp::polyexp(const mp::Range &x, const mp::Range &coefs, double s)
     const double *x_data = x.data();
     for(int i = 0; i < x.size(); ++i) {
         double y_term = 0;
+        double pow = 1;
         for(int j = 0; j < coefs.size(); ++j) {
-            y_term += ::pow(x_data[i], j) * coefs[j];
+            y_term += pow * coefs[j];
+            pow *= x_data[i];
         }
         y_data[i] = y_term * ::exp(-s * x_data[i]);
     }

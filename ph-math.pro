@@ -25,7 +25,8 @@ SOURCES += \
     range.cpp \
     runtest.cpp \
     complex.cpp \
-    fourier.cpp
+    fourier.cpp \
+    polynomial.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -40,4 +41,5 @@ HEADERS += \
     range.h \
     runtest.h \
     complex.h \
-    fourier.h
+    fourier.h \
+    polynomial.h

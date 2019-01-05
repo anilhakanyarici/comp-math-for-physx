@@ -3,6 +3,7 @@
 
 #include "range.h"
 #include "complex.h"
+#include "polynomial.h"
 
 namespace mp {
 
