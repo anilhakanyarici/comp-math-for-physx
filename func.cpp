@@ -117,6 +117,19 @@ mp::Range mp::neg(const mp::Range &x)
     return y;
 }
 
+double mp::factorial(const double &v)
+{
+    return v < 1 ? 1 : mp::factorial(v - 1) * v;
+}
+
+double mp::combination(const int &n, const int &r)
+{
+    double c = 1 / mp::factorial(n - r);
+    for(int i = r + 1; i <= n; ++i)
+        c *= i;
+    return c;
+}
+
 mp::Range mp::linear(const mp::Range &x, double m, double n)
 {
     mp::Range y(x.size());
@@ -584,6 +597,13 @@ mp::Range mp::smooth(const mp::Range &v, const int &radius, const int &times)
         c = s;
     }
     return c;
+}
+
+mp::Range mp::normalize(const mp::Range &v)
+{
+    double max = mp::max(v);
+    double min = mp::abs(mp::min(v));
+    return v / (max > min ? max : min);
 }
 
 void mp::linreg(const mp::Range &x, const mp::Range &y, double &m, double &n)

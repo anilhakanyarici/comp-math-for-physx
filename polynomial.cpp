@@ -1,5 +1,7 @@
 #include "polynomial.h"
 
+#include "func.h"
+
 using namespace mp;
 
 Polynomial::Polynomial()
@@ -39,6 +41,16 @@ Polynomial::Polynomial(const Range &coefs)
     }
 }
 
+Polynomial Polynomial::bessel(int n)
+{
+    if(n < 1) return Polynomial(1);
+    if(n == 1) return Polynomial(mp::Range({1, 1}));
+
+    Polynomial f(1, 2);
+
+    return Polynomial(2 * n - 1) * Polynomial::bessel(n - 1) + f * Polynomial::bessel(n - 2);
+}
+
 Polynomial Polynomial::hermite(int n)
 {
     Polynomial hn((n & 1) == 0 ? 1 : -1);
@@ -47,6 +59,47 @@ Polynomial Polynomial::hermite(int n)
         hn = Polynomial::add(hn.derivate(), Polynomial::mul(min2x, hn));
     }
     return hn;
+}
+
+Polynomial Polynomial::laguerre(int n)
+{
+    Polynomial g(1 / mp::factorial(n), n);
+    for(int i = 0; i < n; ++i){
+        g = Polynomial::sub(g.derivate(), g);
+    }
+    return g;
+}
+
+Polynomial Polynomial::legendre(int n)
+{
+    Polynomial l(1, 2 * n);
+    for(int i = 1; i <= n; ++i){
+        l = Polynomial::add(l, Polynomial(mp::pow(-1, i) * mp::combination(n, i), 2 * (n - i)));
+    }
+    for(int i = 0; i < n; ++i){
+        l = l.derivate();
+    }
+    return l * Polynomial(1 / (mp::pow(2, n) * mp::factorial(n)));
+}
+
+Polynomial Polynomial::bernstein(int i, int n)
+{
+    Polynomial b(mp::combination(n, i), i);
+    Polynomial b2(1);
+    int d = n - i;
+    for(int r = 1; r <= d; ++r){
+        b2 = Polynomial::add(b2, Polynomial(mp::combination(d, r) * mp::pow(-1, r), r));
+    }
+    return Polynomial::mul(b, b2);
+}
+
+Polynomial Polynomial::chebyshev(int n, const int &kind)
+{
+    if(n <= 0) return Polynomial(1);
+    if(n == 1) return Polynomial(kind, 1);
+
+    Polynomial twox(2, 1);
+    return Polynomial::sub(Polynomial::mul(Polynomial::chebyshev(n - 1, kind), twox), Polynomial::chebyshev(n - 2, kind));
 }
 
 int Polynomial::degree() const { return this->_terms.size() - 1; }

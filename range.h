@@ -36,14 +36,14 @@ public:
 
     inline Range operator -() const { return this->neg(); }
 
-    inline Range operator +(const Range &r) { return this->add(r); }
-    inline Range operator -(const Range &r) { return this->sub(r); }
-    inline Range operator *(const Range &r) { return this->mul(r); }
-    inline Range operator /(const Range &r) { return this->div(r); }
-    inline Range operator +(const double &f) { return this->add(f); }
-    inline Range operator -(const double &f) { return this->sub(f); }
-    inline Range operator *(const double &f) { return this->mul(f); }
-    inline Range operator /(const double &f) { return this->div(f); }
+    inline Range operator +(const Range &r) const { return this->add(r); }
+    inline Range operator -(const Range &r) const { return this->sub(r); }
+    inline Range operator *(const Range &r) const { return this->mul(r); }
+    inline Range operator /(const Range &r) const { return this->div(r); }
+    inline Range operator +(const double &f) const { return this->add(f); }
+    inline Range operator -(const double &f) const { return this->sub(f); }
+    inline Range operator *(const double &f) const { return this->mul(f); }
+    inline Range operator /(const double &f) const { return this->div(f); }
     inline friend Range operator +(const double &f, const Range &r) { return Range::add(f, r); }
     inline friend Range operator -(const double &f, const Range &r) { return Range::sub(f, r); }
     inline friend Range operator *(const double &f, const Range &r) { return Range::mul(f, r); }

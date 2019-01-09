@@ -35,6 +35,8 @@ Range abs(const Range &x);
 double max(const Range &r);
 double min(const Range &r);
 Range neg(const Range &x);
+double factorial(const double &v);
+double combination(const int &n, const int &r);
 
 Range linear(const Range &x, double m, double n); //m * x + n
 Range poly(const Range &x, const Range &coefs); //poly(x) = sum(coefs[i] * x^i)
@@ -103,6 +105,7 @@ double cor(const Range &x, const Range &y); //correlation
 Range hamming(const int &N, const double &a = 0.53836);
 Range hamming(const Range &r, const double &a = 0.53836);
 Range smooth(const mp::Range &v, const int &radius, const int &times = 1);
+Range normalize(const mp::Range &v);
 
 void linreg(const Range &x, const Range &y, double &m, double &n); //linear-regression parameters
 Range linreg(const Range &x, const Range &y, double *m = nullptr, double *n = nullptr); //linear-regression parameters with linear function.

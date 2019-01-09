@@ -16,7 +16,15 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    qDebug() << mp::Polynomial::hermite(6).toString();
+    qDebug() << mp::Polynomial::bessel(4).toString();
+
+//    mp::Range x = mp::linspace(-4, 4, 1025);
+//    mp::Range e = mp::exp(-x.pow(2));
+//    for(int i = 1; i < 9; ++i){
+//        mp::Range h = mp::Polynomial::hermite(i)(x);
+//        mp::curve2d(x, mp::normalize(h * e), QString("n=%1").arg(QString::number(i)));
+//    }
+//    mp::show2d();
 
     return app.exec();
 }
