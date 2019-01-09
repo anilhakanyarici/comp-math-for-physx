@@ -16,34 +16,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-//    double B1 = 1;
-//    double B2 = 2;
-
-//    mp::Range l = mp::linspace(0, 5, 10241);
-//    mp::Range E1 = B1 * l * (l + 1);
-//    mp::Range E2 = B2 * l * (l + 1);
-//    mp::Range f1 = (2 * l) * mp::exp(-E1);
-//    mp::Range f2 = (2 * l) * mp::exp(-E2);
-
-//    mp::curve2d(l, f1, "B = 1");
-//    mp::curve2d(l, f2, "B = 2");
-//    mp::show2d();
-
-
-//    RunTest::fourierSeriesTest();
-
-    mp::Polynomial p({ -10, 5, 2, -8, 2 });
-    qDebug() << p.toString();
-    qDebug() << p.derivate().toString();
-    qDebug() << p.integrate().toString();
-
-
-//    mp::Range x = mp::linspace(-2, 4, 1025);
-//    mp::Range y2 = mp::poly(x, { -10, 5, 2, -8, 2 });
-//    mp::Range y = p(x);
-//    mp::curve2d(x, y);
-//    mp::curve2d(x, y2);
-//    mp::show2d();
+    qDebug() << mp::Polynomial::hermite(6).toString();
 
     return app.exec();
 }

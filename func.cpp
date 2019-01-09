@@ -523,6 +523,15 @@ double mp::cov(const mp::Range &x, const mp::Range &y)
     return cov / x.length();
 }
 
+double mp::cor(const mp::Range &x, const mp::Range &y)
+{
+    double sx = mp::dev(x);
+    double sy = mp::dev(y);
+    double cov = mp::cov(x, y);
+    return cov / (sx * sy);
+}
+
+
 mp::Range mp::hamming(const int &N, const double &a)
 {
     assert(a <= 1);
@@ -551,25 +560,25 @@ mp::Range mp::hamming(const Range &r, const double &a)
     return h;
 }
 
-mp::Range mp::smooth(const mp::Range &v, const int &point, const int &times)
+mp::Range mp::smooth(const mp::Range &v, const int &radius, const int &times)
 {
-    mp::Range smoother = mp::hamming(2 * point + 1);
+    mp::Range smoother = mp::hamming(2 * radius + 1);
     smoother = smoother / mp::sum(smoother);
 
     mp::Range s(v.size());
     mp::Range c = v.copy();
-    for(int i = 0; i < point; ++i){
+    for(int i = 0; i < radius; ++i){
         s[i] = v[i];
         s[v.size() - 1 - i] = v[v.size() - 1 - i];
     }
-    int middles = s.size() - point;
+    int middles = s.size() - radius;
     for(int k = 0; k < times; ++k){
         double *s_data = s.data();
         double *c_data = c.data();
-        for(int i = point; i < middles; ++i) {
+        for(int i = radius; i < middles; ++i) {
             s_data[i] = 0;
-            for(int j = -point; j <= point; ++j) {
-                s_data[i] += c_data[i + j] * smoother[j + point];
+            for(int j = -radius; j <= radius; ++j) {
+                s_data[i] += c_data[i + j] * smoother[j + radius];
             }
         }
         c = s;

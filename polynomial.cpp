@@ -39,6 +39,16 @@ Polynomial::Polynomial(const Range &coefs)
     }
 }
 
+Polynomial Polynomial::hermite(int n)
+{
+    Polynomial hn((n & 1) == 0 ? 1 : -1);
+    Polynomial min2x(mp::Range({0, -2}));
+    for(int i = 0; i < n; ++i){
+        hn = Polynomial::add(hn.derivate(), Polynomial::mul(min2x, hn));
+    }
+    return hn;
+}
+
 int Polynomial::degree() const { return this->_terms.size() - 1; }
 
 double Polynomial::coefficient(int term) const

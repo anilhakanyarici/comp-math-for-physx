@@ -16,6 +16,8 @@ public:
     Polynomial(double d, int degree);
     explicit Polynomial(const Range &coefs);
 
+    static Polynomial hermite(int n);
+
     int degree() const;
     double coefficient(int term) const;
 

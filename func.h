@@ -98,10 +98,11 @@ double dev(const Range &x); //deviation
 double var(const Range &x); //variance
 double mse(const Range &x2, const Range &x1); //mean-square error
 double cov(const Range &x, const Range &y); //covariance
+double cor(const Range &x, const Range &y); //correlation
 
 Range hamming(const int &N, const double &a = 0.53836);
 Range hamming(const Range &r, const double &a = 0.53836);
-Range smooth(const mp::Range &v, const int &point, const int &times = 1);
+Range smooth(const mp::Range &v, const int &radius, const int &times = 1);
 
 void linreg(const Range &x, const Range &y, double &m, double &n); //linear-regression parameters
 Range linreg(const Range &x, const Range &y, double *m = nullptr, double *n = nullptr); //linear-regression parameters with linear function.

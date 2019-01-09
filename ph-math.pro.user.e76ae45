@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.8.0, 2019-01-09T09:18:05. -->
+<!-- Written by QtCreator 4.8.0, 2019-01-07T00:54:03. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
-  <value type="QByteArray">{eb3c8e3e-b21c-49ac-9d53-f470c77c7c46}</value>
+  <value type="QByteArray">{e76ae45f-b528-441a-b2a5-54db37dfc5b1}</value>
  </data>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
@@ -54,10 +54,7 @@
  </data>
  <data>
   <variable>ProjectExplorer.Project.PluginSettings</variable>
-  <valuemap type="QVariantMap">
-   <valuelist type="QVariantList" key="ClangCodeModel.CustomCommandLineKey"/>
-   <value type="bool" key="ClangCodeModel.UseGlobalConfig">true</value>
-  </valuemap>
+  <valuemap type="QVariantMap"/>
  </data>
  <data>
   <variable>ProjectExplorer.Project.Target.0</variable>
