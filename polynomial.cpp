@@ -108,7 +108,7 @@ double Polynomial::coefficient(int term) const
 {
     if (term < 0 && this->_terms.size() <= term)
         return 0;
-    return this->_terms[0];
+    return this->_terms[term];
 }
 
 Polynomial Polynomial::add(const Polynomial &l, const Polynomial &r)
@@ -188,23 +188,18 @@ QString Polynomial::toString(char f, int precision) const
 {
     if(this->degree() == 0)
         return QString::number(this->coefficient(0));
-    QString str;
-    int i = 0;
-    const double *data = this->_terms.data();
-    int size = this->_terms.size();
-    for( ; i < size; ++i){
-        if(data[i] != 0 && i > 0) {
-            str = QString("%1*x^%2").arg(QString::number(data[i], f, precision), QString::number(i));
-            break;
-        } else if(data[i] != 0 && i == 0) {
-            str = QString("%1").arg(QString::number(data[i], f, precision));
-            break;
-        }
-    }
-    ++i;
-    for( ; i < size; ++i){
-        if(data[i] != 0)
-            str.append(QString(" + %1*x^%2").arg(QString::number(data[i], f, precision), QString::number(i)));
+    QString str = "";
+    double c = this->coefficient(0);
+    if(c != 0)
+        str = QString::number(c, f, precision);
+    c = this->coefficient(1);
+    if(c != 0)
+        str = str.isEmpty() ? QString::number(c, f, precision) + QString("x") : str + QString(c < 0 ? " - " : " + ") + QString::number(mp::abs(c), f, precision) + QString("x");
+
+    for(int i = 2; i <= this->degree(); ++i) {
+        c = this->coefficient(i);
+        if(c != 0)
+            str = str.isEmpty() ? QString::number(c, f, precision) + QString("x^%1").arg(QString::number(i, f, precision)) : str + QString(c < 0 ? " - " : " + ") + QString::number(mp::abs(c), f, precision) + QString("x^%1").arg(QString::number(i, f, precision));
     }
     return str;
 }

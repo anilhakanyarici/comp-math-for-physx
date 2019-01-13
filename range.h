@@ -33,6 +33,7 @@ public:
     Range pow(const double &f) const;
 
     Range copy() const;
+    Range concat(const Range &right) const;
 
     inline Range operator -() const { return this->neg(); }
 

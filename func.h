@@ -112,6 +112,7 @@ Range linreg(const Range &x, const Range &y, double *m = nullptr, double *n = nu
 
 double integral(const Range &x, const Range &y);
 QMap<double, double> frequency(const Range &values, const int &bins = 10);
+double random(double min = 0, double max = 1);
 mp::Range random(int count = 1, double min = 0, double max = 1);
 
 QVector<Range> loadFromCSVFile(const QString &filename, QStringList *column_names = nullptr);

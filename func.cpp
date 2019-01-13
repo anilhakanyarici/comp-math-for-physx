@@ -650,6 +650,12 @@ QMap<double, double> mp::frequency(const Range &values, const int &bins)
     return freq;
 }
 
+double mp::random(double min, double max)
+{
+    double r = (double)qrand() / RAND_MAX;
+    return min + r * (max - min);
+}
+
 mp::Range mp::random(int count, double min, double max)
 {
     assert(min < max);

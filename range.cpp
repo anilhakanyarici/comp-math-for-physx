@@ -222,3 +222,16 @@ mp::Range mp::Range::copy() const
     }
     return c;
 }
+
+mp::Range mp::Range::concat(const mp::Range &right) const
+{
+    mp::Range c(this->size() + right.size());
+    double *d = c.data();
+    const double *t = this->data();
+    const double *r = right.data();
+    for(int i = 0; i < this->size(); ++i)
+        d[i] = t[i];
+    for(int i = 0; i < right.size(); ++i)
+        d[i + this->size()] = r[i];
+    return c;
+}
