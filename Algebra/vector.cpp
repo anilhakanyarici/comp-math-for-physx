@@ -251,6 +251,14 @@ Vector Vector::div(const Vector &l, const float &r)
     return c;
 }
 
+Vector Vector::neg(const Vector &v)
+{
+    Vector r(v._pimpl->size);
+    for(int i = 0; i < v._pimpl->size; ++i)
+        r._pimpl->data[i] = v._pimpl->data[i];
+    return r;
+}
+
 bool Vector::equal(const Vector &l, const Vector &r)
 {
     static float epsilon = 1e-15;

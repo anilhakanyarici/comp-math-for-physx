@@ -66,8 +66,10 @@ public:
     static Vector4 mul(const Vector4 &left, const float &right);
     static Vector4 mul(const Matrix4x4 &left, const Vector4 &right);
     static Vector4 div(const Vector4 &left, const float &right);
-
+    static Vector4 neg(const Vector4 &v);
     static bool equal(const Vector4 &left, const Vector4 &right);
+
+    friend inline Vector4 operator -(const Vector4 &v) { return Vector4::neg(v); }
 
     friend inline Vector4 operator +(const Vector4 &v, const Vector4 &r) { return Vector4::add(v, r); }
     friend inline Vector4 operator -(const Vector4 &v, const Vector4 &r) { return Vector4::sub(v, r); }

@@ -62,7 +62,10 @@ public:
     static Vector3 mul(const Vector3 &left, const float &right);
     static Vector3 mul(const Matrix3x3 &m, const Vector3 &v);
     static Vector3 div(const Vector3 &left, const float &right);
+    static Vector3 neg(const Vector3 &v);
     static bool equal(const Vector3 &left, const Vector3 &right);
+
+    friend inline Vector3 operator -(const Vector3 &v) { return Vector3::neg(v); }
 
     friend inline Vector3 operator +(const Vector3 &v, const Vector3 &r) { return Vector3::add(v, r); }
     friend inline Vector3 operator -(const Vector3 &v, const Vector3 &r) { return Vector3::sub(v, r); }

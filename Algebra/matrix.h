@@ -62,10 +62,13 @@ public:
     static Matrix mul(const Matrix &l, const float &r);
     static Matrix mul(const Matrix &l, const Matrix &r);
     static Matrix div(const Matrix &l, const float &r);
+    static Matrix neg(const Matrix &l);
     static bool equal(const Matrix &l, const Matrix &r);
 
     std::string toString() const;
     Matrix copy() const;
+
+    friend inline Matrix operator -(const Matrix &v) { return Matrix::neg(v); }
 
     friend inline Matrix operator +(const Matrix &l, const Matrix &r) { return Matrix::add(l, r); }
     friend inline Matrix operator -(const Matrix &l, const Matrix &r) { return Matrix::sub(l, r); }

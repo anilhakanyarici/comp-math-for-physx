@@ -160,6 +160,11 @@ Vector3 Vector3::div(const Vector3 &left, const float &right)
     return Vector3(left._d[0] / right, left._d[1] / right, left._d[2] / right);
 }
 
+Vector3 Vector3::neg(const Vector3 &v)
+{
+    return Vector3(-v._d[0], -v._d[1], -v._d[2]);
+}
+
 bool Vector3::equal(const Vector3 &left, const Vector3 &right)
 {
     return ::fabs(left[0] - right[0]) < 1e-15 && ::fabs(left[1] - right[1]) < 1e-15 && ::fabs(left[2] - right[2]) < 1e-15;

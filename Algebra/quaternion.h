@@ -44,11 +44,14 @@ public:
 
     float angle() const;
     Vector3 axis() const;
-    Quaternion unit() const;
+    Quaternion normalize() const;
     float magnitude() const;
     float sqrMagnitude() const;
     Quaternion conjugate() const;
     Quaternion reciprocal() const; //multiplicative inverse
+
+    std::string toString() const;
+    Quaternion copy() const;
 
     Vector3 toEuler() const;
     Matrix3x3 toRotationMatrix() const;
@@ -65,7 +68,10 @@ public:
     static Quaternion mul(const Quaternion &p, float quot);
     static Quaternion div(const Quaternion &p, const Quaternion &q);
     static Quaternion div(const Quaternion &p, float den);
+    static Quaternion neg(const Quaternion &q);
     static bool equal(const Quaternion &p, const Quaternion &q);
+
+    friend inline Quaternion operator -(const Quaternion &q) { return Quaternion::neg(q); }
 
     friend inline Quaternion operator +(const Quaternion &q, const Quaternion &p) { return Quaternion::add(q, p); }
     friend inline Quaternion operator +(const Quaternion &q, const Vector3 &v) { return Quaternion::add(q, v); }

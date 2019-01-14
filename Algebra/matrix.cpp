@@ -387,6 +387,17 @@ Matrix Matrix::div(const Matrix &l, const float &r)
     return m;
 }
 
+Matrix Matrix::neg(const Matrix &l)
+{
+    Matrix m(l._pimpl->column_size, l._pimpl->row_size, true);
+    for(int i = 0; i < l._pimpl->row_size; ++i){
+        for(int j = 0; j < l._pimpl->row_size; ++j){
+            m.at(i, j) = -l.at(i, j);
+        }
+    }
+    return m;
+}
+
 bool Matrix::equal(const Matrix &l, const Matrix &r)
 {
     static float epsilon = 1e-15;

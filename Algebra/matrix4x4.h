@@ -42,7 +42,13 @@ public:
     static Vector4 mul(const Matrix4x4 &m, const Vector4 &v);
     static Matrix4x4 mul(const Matrix4x4 &m, const float &f);
     static Matrix4x4 div(const Matrix4x4 &m, const float &f);
+    static Matrix4x4 neg(const Matrix4x4 &m);
     static bool equal(const Matrix4x4 &l, const Matrix4x4 &r);
+
+    std::string toString() const;
+    Matrix4x4 copy() const;
+
+    friend inline Matrix4x4 operator -(const Matrix4x4 &v) { return Matrix4x4::neg(v); }
 
     friend Matrix4x4 operator +(const Matrix4x4 &m, const Matrix4x4 &r) { return Matrix4x4::add(m, r); }
     friend Matrix4x4 operator -(const Matrix4x4 &m, const Matrix4x4 &r) { return Matrix4x4::sub(m, r); }

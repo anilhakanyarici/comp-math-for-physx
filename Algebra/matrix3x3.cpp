@@ -143,6 +143,51 @@ Matrix3x3 Matrix3x3::inverse() const
     return Matrix3x3(m00, m10, m20, m01, m11, m21, m02, m12, m22);
 }
 
+Matrix3x3 Matrix3x3::minorMatrix() const
+{
+    Matrix3x3 mm;
+    mm._d[0][0] = this->_d[1][1] * this->_d[2][2] - this->_d[2][1] * this->_d[1][2];
+    mm._d[1][0] = this->_d[0][1] * this->_d[2][2] - this->_d[2][1] * this->_d[0][2];
+    mm._d[2][0] = this->_d[0][1] * this->_d[1][2] - this->_d[1][1] * this->_d[0][2];
+    mm._d[0][1] = this->_d[1][0] * this->_d[2][2] - this->_d[2][0] * this->_d[1][2];
+    mm._d[1][1] = this->_d[0][0] * this->_d[2][2] - this->_d[2][0] * this->_d[0][2];
+    mm._d[2][1] = this->_d[0][0] * this->_d[1][2] - this->_d[1][0] * this->_d[0][2];
+    mm._d[0][2] = this->_d[1][0] * this->_d[2][1] - this->_d[2][0] * this->_d[1][1];
+    mm._d[1][2] = this->_d[0][0] * this->_d[2][1] - this->_d[2][0] * this->_d[0][1];
+    mm._d[2][2] = this->_d[0][0] * this->_d[1][1] - this->_d[1][0] * this->_d[0][1];
+    return mm;
+}
+
+Matrix3x3 Matrix3x3::cofactorMatrix() const
+{
+    Matrix3x3 mm;
+    mm._d[0][0] = this->_d[1][1] * this->_d[2][2] - this->_d[2][1] * this->_d[1][2];
+    mm._d[1][0] = -(this->_d[0][1] * this->_d[2][2] - this->_d[2][1] * this->_d[0][2]);
+    mm._d[2][0] = this->_d[0][1] * this->_d[1][2] - this->_d[1][1] * this->_d[0][2];
+    mm._d[0][1] = -(this->_d[1][0] * this->_d[2][2] - this->_d[2][0] * this->_d[1][2]);
+    mm._d[1][1] = this->_d[0][0] * this->_d[2][2] - this->_d[2][0] * this->_d[0][2];
+    mm._d[2][1] = -(this->_d[0][0] * this->_d[1][2] - this->_d[1][0] * this->_d[0][2]);
+    mm._d[0][2] = this->_d[1][0] * this->_d[2][1] - this->_d[2][0] * this->_d[1][1];
+    mm._d[1][2] = -(this->_d[0][0] * this->_d[2][1] - this->_d[2][0] * this->_d[0][1]);
+    mm._d[2][2] = this->_d[0][0] * this->_d[1][1] - this->_d[1][0] * this->_d[0][1];
+    return mm;
+}
+
+Matrix3x3 Matrix3x3::adjoint() const
+{
+    Matrix3x3 mm;
+    mm._d[0][0] = this->_d[1][1] * this->_d[2][2] - this->_d[2][1] * this->_d[1][2];
+    mm._d[0][1] = -(this->_d[0][1] * this->_d[2][2] - this->_d[2][1] * this->_d[0][2]);
+    mm._d[0][2] = this->_d[0][1] * this->_d[1][2] - this->_d[1][1] * this->_d[0][2];
+    mm._d[1][0] = -(this->_d[1][0] * this->_d[2][2] - this->_d[2][0] * this->_d[1][2]);
+    mm._d[1][1] = this->_d[0][0] * this->_d[2][2] - this->_d[2][0] * this->_d[0][2];
+    mm._d[1][2] = -(this->_d[0][0] * this->_d[1][2] - this->_d[1][0] * this->_d[0][2]);
+    mm._d[2][0] = this->_d[1][0] * this->_d[2][1] - this->_d[2][0] * this->_d[1][1];
+    mm._d[2][1] = -(this->_d[0][0] * this->_d[2][1] - this->_d[2][0] * this->_d[0][1]);
+    mm._d[2][2] = this->_d[0][0] * this->_d[1][1] - this->_d[1][0] * this->_d[0][1];
+    return mm;
+}
+
 Matrix3x3 Matrix3x3::add(const Matrix3x3 &l, const Matrix3x3 &r)
 {
     return Matrix3x3(
@@ -222,6 +267,21 @@ Matrix3x3 Matrix3x3::div(const Matrix3x3 &m, const float &f)
     n._d[2][0] = m._d[2][0] / f;
     n._d[2][1] = m._d[2][1] / f;
     n._d[2][2] = m._d[2][2] / f;
+    return n;
+}
+
+Matrix3x3 Matrix3x3::neg(const Matrix3x3 &m)
+{
+    Matrix3x3 n;
+    n._d[0][0] = -m._d[0][0];
+    n._d[0][1] = -m._d[0][1];
+    n._d[0][2] = -m._d[0][2];
+    n._d[1][0] = -m._d[1][0];
+    n._d[1][1] = -m._d[1][1];
+    n._d[1][2] = -m._d[1][2];
+    n._d[2][0] = -m._d[2][0];
+    n._d[2][1] = -m._d[2][1];
+    n._d[2][2] = -m._d[2][2];
     return n;
 }
 

@@ -213,6 +213,28 @@ Matrix4x4 Matrix4x4::div(const Matrix4x4 &m, const float &f)
     return n;
 }
 
+Matrix4x4 Matrix4x4::neg(const Matrix4x4 &m)
+{
+    Matrix4x4 n;
+    n._d[0][0] = -m._d[0][0];
+    n._d[0][1] = -m._d[0][1];
+    n._d[0][2] = -m._d[0][2];
+    n._d[0][3] = -m._d[0][3];
+    n._d[1][0] = -m._d[1][0];
+    n._d[1][1] = -m._d[1][1];
+    n._d[1][2] = -m._d[1][2];
+    n._d[1][3] = -m._d[1][3];
+    n._d[2][0] = -m._d[2][0];
+    n._d[2][1] = -m._d[2][1];
+    n._d[2][2] = -m._d[2][2];
+    n._d[2][3] = -m._d[2][3];
+    n._d[3][0] = -m._d[3][0];
+    n._d[3][1] = -m._d[3][1];
+    n._d[3][2] = -m._d[3][2];
+    n._d[3][3] = -m._d[3][3];
+    return n;
+}
+
 bool Matrix4x4::equal(const Matrix4x4 &l, const Matrix4x4 &r)
 {
     for(int i = 0; i < 4; ++i){
@@ -222,4 +244,39 @@ bool Matrix4x4::equal(const Matrix4x4 &l, const Matrix4x4 &r)
         }
     }
     return true;
+}
+
+std::string Matrix4x4::toString() const
+{
+    std::string str;
+    for(int i = 0; i < 4; ++i){
+        std::string row_str = "";
+        for(int j = 0; j < 4; ++j){
+            row_str.append(std::to_string(this->at(j, i))).append("\t");
+        }
+        str.append(row_str).append("\n");
+    }
+    return str;
+}
+
+Matrix4x4 Matrix4x4::copy() const
+{
+    Matrix4x4 n;
+    n._d[0][0] = this->_d[0][0];
+    n._d[0][1] = this->_d[0][1];
+    n._d[0][2] = this->_d[0][2];
+    n._d[0][3] = this->_d[0][3];
+    n._d[1][0] = this->_d[1][0];
+    n._d[1][1] = this->_d[1][1];
+    n._d[1][2] = this->_d[1][2];
+    n._d[1][3] = this->_d[1][3];
+    n._d[2][0] = this->_d[2][0];
+    n._d[2][1] = this->_d[2][1];
+    n._d[2][2] = this->_d[2][2];
+    n._d[2][3] = this->_d[2][3];
+    n._d[3][0] = this->_d[3][0];
+    n._d[3][1] = this->_d[3][1];
+    n._d[3][2] = this->_d[3][2];
+    n._d[3][3] = this->_d[3][3];
+    return n;
 }

@@ -34,6 +34,9 @@ public:
     float determinant() const;
     Matrix3x3 transpose() const;
     Matrix3x3 inverse() const;
+    Matrix3x3 minorMatrix() const;
+    Matrix3x3 cofactorMatrix() const;
+    Matrix3x3 adjoint() const;
 
     static Matrix3x3 add(const Matrix3x3 &l, const Matrix3x3 &r);
     static Matrix3x3 sub(const Matrix3x3 &l, const Matrix3x3 &r);
@@ -41,10 +44,13 @@ public:
     static Vector3 mul(const Matrix3x3 &m, const Vector3 &v);
     static Matrix3x3 mul(const Matrix3x3 &m, const float &f);
     static Matrix3x3 div(const Matrix3x3 &m, const float &f);
+    static Matrix3x3 neg(const Matrix3x3 &m);
     static bool equal(const Matrix3x3 &l, const Matrix3x3 &r);
 
     std::string toString() const;
     Matrix3x3 copy() const;
+
+    friend inline Matrix3x3 operator -(const Matrix3x3 &v) { return Matrix3x3::neg(v); }
 
     friend Matrix3x3 operator +(const Matrix3x3 &m, const Matrix3x3 &r) { return Matrix3x3::add(m, r); }
     friend Matrix3x3 operator -(const Matrix3x3 &m, const Matrix3x3 &r) { return Matrix3x3::sub(m, r); }

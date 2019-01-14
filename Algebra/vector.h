@@ -49,12 +49,16 @@ public:
     std::string toString() const;
     Vector copy() const;
 
+
     static Vector add(const Vector &l, const Vector &r);
     static Vector sub(const Vector &l, const Vector &r);
     static float mul(const Vector &l, const Vector &r);
     static Vector mul(const Vector &l, const float &r);
     static Vector div(const Vector &l, const float &r);
+    static Vector neg(const Vector &v);
     static bool equal(const Vector &l, const Vector &r);
+
+    friend inline Vector operator -(const Vector &v) { return Vector::neg(v); }
 
     friend inline Vector operator +(const Vector &l, const Vector &r) { return Vector::add(l, r); }
     friend inline Vector operator -(const Vector &l, const Vector &r) { return Vector::sub(l, r); }

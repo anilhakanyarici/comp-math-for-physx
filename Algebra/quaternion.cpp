@@ -60,7 +60,7 @@ Vector3 Quaternion::axis() const
     return this->vector().normalize();
 }
 
-Quaternion Quaternion::unit() const
+Quaternion Quaternion::normalize() const
 {
     float mag = sqrt(this->_d[0] * this->_d[0] + this->_d[1] * this->_d[1] + this->_d[2] * this->_d[2] + this->_d[3] * this->_d[3]);
     return Quaternion(this->_d[0] / mag, this->_d[1] / mag, this->_d[2] / mag, this->_d[3] / mag);
@@ -78,13 +78,28 @@ float Quaternion::sqrMagnitude() const
 
 Quaternion Quaternion::conjugate() const
 {
-    return Quaternion(this->_d[0], -this->_d[1], -this->_d[2], - this->_d[3]);
+    return Quaternion(this->_d[0], -this->_d[1], -this->_d[2], -this->_d[3]);
 }
 
 Quaternion Quaternion::reciprocal() const
 {
     float sLen = this->_d[0] * this->_d[0] + this->_d[1] * this->_d[1] + this->_d[2] * this->_d[2] + this->_d[3] * this->_d[3];
     return Quaternion(this->_d[0] / sLen, -this->_d[1] / sLen, -this->_d[2] / sLen, - this->_d[3] / sLen);
+}
+
+std::string Quaternion::toString() const
+{
+    std::string str = std::to_string(this->_d[0]) + " + (";
+    str.append(std::to_string(this->_d[1])).append("; ");
+    str.append(std::to_string(this->_d[2])).append("; ");
+    str.append(std::to_string(this->_d[3]));
+    str.append(")");
+    return str;
+}
+
+Quaternion Quaternion::copy() const
+{
+    return Quaternion(this->_d[0], this->_d[1], this->_d[2], this->_d[3]);
 }
 
 Vector3 Quaternion::toEuler() const
@@ -225,6 +240,11 @@ Quaternion Quaternion::div(const Quaternion &p, const Quaternion &q)
 Quaternion Quaternion::div(const Quaternion &p, float den)
 {
     return Quaternion(p._d[0] / den, p._d[1] / den, p._d[2] / den, p._d[3] / den);
+}
+
+Quaternion Quaternion::neg(const Quaternion &q)
+{
+    return Quaternion(-q._d[0], -q._d[1], -q._d[2], -q._d[3]);
 }
 
 bool Quaternion::equal(const Quaternion &p, const Quaternion &q)

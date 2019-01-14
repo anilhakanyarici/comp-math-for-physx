@@ -139,6 +139,11 @@ Vector4 Vector4::div(const Vector4 &left, const float &right)
     return Vector4(left._d[0] / right, left._d[1] / right, left._d[2] / right, left._d[3] / right);
 }
 
+Vector4 Vector4::neg(const Vector4 &v)
+{
+    return Vector4(-v._d[0], -v._d[1], -v._d[2], -v._d[3]);
+}
+
 bool Vector4::equal(const Vector4 &left, const Vector4 &right)
 {
     return ::fabs(left[0] - right[0]) < 1e-15 && ::fabs(left[1] - right[1]) < 1e-15 && ::fabs(left[2] - right[2]) < 1e-15 && ::fabs(left[3] - right[3]) < 1e-15;
