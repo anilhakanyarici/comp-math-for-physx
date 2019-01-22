@@ -2,12 +2,16 @@
 #include <stdio.h>
 #include "stdexcept"
 #include <memory>
+#include <algorithm>
+#include <locale>
+
+#include "drbg.h"
 
 using namespace mp;
 
 struct InternalBasicOperators
 {
-    static uint *Add(uint *left, int leftLength, uint *right, int rightLength, int &resultLength)
+    static uint *add(uint *left, int leftLength, uint *right, int rightLength, int &resultLength)
     {
         uint *operands[2] { left, right };
         int lengths[2] { leftLength, rightLength };
@@ -20,14 +24,14 @@ struct InternalBasicOperators
 
         uint *result = new uint[max + 1];
         ulong carry = 0;
-        for (int i = 0; i < min; i++){
+        for (int i = 0; i < min; ++i){
             ulong sum = (ulong)minOperand[i] + (ulong)maxOperand[i] + carry;
             carry = sum >> 32;
             result[i] = (uint)(sum);
         }
 
         if (carry > 0){
-            for (int i = min; i < max; i++){
+            for (int i = min; i < max; ++i){
                 ulong sum = (ulong)maxOperand[i] + carry;
                 carry = sum >> 32;
                 result[i] = (uint)(sum);
@@ -36,19 +40,19 @@ struct InternalBasicOperators
             resultLength = max + (carry > 0);
         }
         else{
-            for (int i = min; i < max; i++)
+            for (int i = min; i < max; ++i)
                 result[i] = maxOperand[i];
             resultLength = max;
         }
         return result;
     }
-    static uint *AddSingle(uint *left, int leftLength, uint right, int &resultLength)
+    static uint *addSingle(uint *left, int leftLength, uint right, int &resultLength)
     {
         ulong sum = (ulong)left[0] + right;
         uint carry = sum >> 32;
         uint* result = new uint[leftLength + 1];
         result[0] = (uint)sum;
-        for(int i = 1; i < leftLength; i++){
+        for(int i = 1; i < leftLength; ++i){
             sum = (ulong)carry + left[i];
             result[i] = (uint)sum;
             carry = sum >> 32;
@@ -57,7 +61,7 @@ struct InternalBasicOperators
         resultLength = leftLength + (result[leftLength] != 0);
         return result;
     }
-    static uint *DivRem(uint *numerator, int numeratorLength, uint *denominator, int denominatorLength, int &quotientLength, int &remainderLength)
+    static uint *divrem(uint *numerator, int numeratorLength, uint *denominator, int denominatorLength, int &quotientLength, int &remainderLength)
     {
         if(denominatorLength == 1){
             remainderLength = 1;
@@ -153,23 +157,23 @@ struct InternalBasicOperators
                 if (rQuot > 0)
                 {
                     ulong borrow = 0;
-                    for (int u = 0; u < denominatorLength; u++)
+                    for (int u = 0; u < denominatorLength; ++u)
                     {
                         borrow += denominator[u] * rQuot;
                         uint uSub = (uint)borrow;
                         borrow >>= 32;
                         if (numerator[uInd + u] < uSub)
-                            borrow++;
+                            ++borrow;
                         numerator[uInd + u] -= uSub;
                     }
                     if (hiNumDig < borrow)
                     {
                         uint uCarry = 0;
-                        for (int iu2 = 0; iu2 < denominatorLength; iu2++)
+                        for (int iu2 = 0; iu2 < denominatorLength; ++iu2)
                         {
                             uCarry = InternalBasicOperators::addCarry(&numerator[uInd + iu2], denominator[iu2], uCarry);
                         }
-                        rQuot--;
+                        --rQuot;
                     }
                     numLastU = uInd + denominatorLength - 1;
                 }
@@ -185,7 +189,7 @@ struct InternalBasicOperators
             return quotient;
         }
     }
-    static void Rem(uint *numerator, int numeratorLength, uint *denominator, int denominatorLength, int &remainderLength)
+    static void rem(uint *numerator, int numeratorLength, uint *denominator, int denominatorLength, int &remainderLength)
     {
         if(denominatorLength == 1){
             remainderLength = 1;
@@ -262,19 +266,19 @@ struct InternalBasicOperators
                 if (rQuot > 0)
                 {
                     ulong borrow = 0;
-                    for (int u = 0; u < denominatorLength; u++)
+                    for (int u = 0; u < denominatorLength; ++u)
                     {
                         borrow += denominator[u] * rQuot;
                         uint uSub = (uint)borrow;
                         borrow >>= 32;
                         if (numerator[uInd + u] < uSub)
-                            borrow++;
+                            ++borrow;
                         numerator[uInd + u] -= uSub;
                     }
                     if (hiNumDig < borrow)
                     {
                         uint uCarry = 0;
-                        for (int iu2 = 0; iu2 < denominatorLength; iu2++)
+                        for (int iu2 = 0; iu2 < denominatorLength; ++iu2)
                         {
                             uCarry = InternalBasicOperators::addCarry(&numerator[uInd + iu2], denominator[iu2], uCarry);
                         }
@@ -288,7 +292,7 @@ struct InternalBasicOperators
                 remainderLength = remainderLength - 1;
         }
     }
-    static uint *Mul(uint *left, int leftLength, uint *right, int rightLength, int &resultLength)
+    static uint *mul(uint *left, int leftLength, uint *right, int rightLength, int &resultLength)
     {
         if (leftLength > rightLength)
         {
@@ -303,15 +307,15 @@ struct InternalBasicOperators
         resultLength = leftLength + rightLength;
         uint *result = new uint[resultLength];
 
-        for(int i = 0; i < resultLength; i++)
+        for(int i = 0; i < resultLength; ++i)
             result[i] = 0;
 
-        for (int i = 0; i < leftLength; i++)
+        for (int i = 0; i < leftLength; ++i)
         {
             if (left[i] == 0) continue;
 
             ulong carry = 0;
-            for (int j = 0, k = i; j < rightLength; j++, k++)
+            for (int j = 0, k = i; j < rightLength; ++j, ++k)
             {
                 ulong val = ((ulong)left[i] * right[j]) + result[k] + carry;
                 result[k] = (uint)val;
@@ -323,14 +327,14 @@ struct InternalBasicOperators
             resultLength = resultLength - 1;
         return result;
     }
-    static uint *MulSingle(uint *left, int leftLength, uint right, int &resultLength)
+    static uint *mulSingle(uint *left, int leftLength, uint right, int &resultLength)
     {
         resultLength = leftLength + 1;
         uint *result = new uint[resultLength];
 
         result[0] = 0;
         ulong carry;
-        for (int i = 0; i < leftLength; i++)
+        for (int i = 0; i < leftLength; ++i)
         {
             carry = 0;
             ulong val = ((ulong)left[i] * (ulong)right) + (ulong)result[i];
@@ -343,28 +347,28 @@ struct InternalBasicOperators
             resultLength = resultLength - 1;
         return result;
     }
-    static uint *Sub(uint *left, int leftLength, uint *right, int rightLength, int &resultLength)
+    static uint *sub(uint *left, int leftLength, uint *right, int rightLength, int &resultLength)
     {
         uint *result = new uint[leftLength];
-        for(int i = leftLength - rightLength; i < leftLength; i++)
+        for(int i = leftLength - rightLength; i < leftLength; ++i)
             result[i] = 0;
 
         int carry = 0;
         int i = 0;
         long diff;
-        for ( ; i < rightLength; i++)
+        for ( ; i < rightLength; ++i)
         {
             diff = (long)left[i] - (long)right[i] + carry;
             result[i] = (uint)(diff);
             carry = (diff >> 63);
         }
-        for ( ; carry && i < leftLength; i++)
+        for ( ; carry && i < leftLength; ++i)
         {
             diff = (long)left[i] + carry;
             result[i] = (uint)(diff);
             carry = (diff >> 63);
         }
-        for ( ; i < leftLength; i++)
+        for ( ; i < leftLength; ++i)
             result[i] = left[i];
 
         resultLength = leftLength;
@@ -373,11 +377,11 @@ struct InternalBasicOperators
         return result;
     }
 
-    static uint *ShiftRight(uint *digits, int digitLength, int shift, int &resultLength)
+    static uint *shiftRight(uint *digits, int digitLength, int shift, int &resultLength)
     {
         if (shift == 0) {
             uint *clone = new uint[digitLength];
-            for(int i = 0; i < digitLength; i++)
+            for(int i = 0; i < digitLength; ++i)
                 clone[i] = digits[i];
             return clone;
         }
@@ -387,11 +391,11 @@ struct InternalBasicOperators
 
         int predictedLen = (digitLength) - fullShift;
         uint *result = new uint[predictedLen];
-        for(int i = 0; i < predictedLen; i++)
+        for(int i = 0; i < predictedLen; ++i)
             result[i] = digits[fullShift + i];
         if(remShift > 0){
             result[0] = result[0] >> remShift;
-            for(int i = 1; i < predictedLen; i++){
+            for(int i = 1; i < predictedLen; ++i){
                 result[i - 1] |= result[i] << (32 - remShift);
                 result[i] = result[i] >> remShift;
             }
@@ -401,11 +405,11 @@ struct InternalBasicOperators
         resultLength = predictedLen;
         return result;
     }
-    static uint *ShiftLeft(uint *digits, int digitLength, int shift, int &resultLength)
+    static uint *shiftLeft(uint *digits, int digitLength, int shift, int &resultLength)
     {
         if (shift == 0) {
             uint *clone = new uint[digitLength];
-            for(int i = 0; i < digitLength; i++)
+            for(int i = 0; i < digitLength; ++i)
                 clone[i] = digits[i];
             return clone;
         }
@@ -417,17 +421,17 @@ struct InternalBasicOperators
         uint *result = new uint[resultLength];
         result[resultLength - 1] = 0;
 
-        for(int i = 0; i < digitLength; i++)
+        for(int i = 0; i < digitLength; ++i)
             result[i + fullShift] = digits[i];
         if(remShift > 0){
-            for(int i = resultLength - 1; i > fullShift; i--){
+            for(int i = resultLength - 1; i > fullShift; --i){
                 uint dig = result[i] << remShift;
                 dig |= result[i - 1] >> (32 - remShift);
                 result[i] = dig;
             }
             result[fullShift] = result[fullShift] << remShift;
         }
-        for(int i = 0; i < fullShift; i++)
+        for(int i = 0; i < fullShift; ++i)
             result[i] = 0;
         if(result[resultLength - 1] == 0 && resultLength > 1)
             resultLength--;
@@ -439,7 +443,7 @@ struct InternalBasicOperators
         int min = leftLength > rightLength ? rightLength : leftLength;
 
         uint *result = new uint[min];
-        for (int i = 0; i < min; i++)
+        for (int i = 0; i < min; ++i)
             result[i] = left[i] & right[i];
 
         resultLength = min;
@@ -459,9 +463,9 @@ struct InternalBasicOperators
 
         uint *result = new uint[max];
         int i = 0;
-        for ( ; i < min; i++)
+        for ( ; i < min; ++i)
             result[i] = left[i] | right[i];
-        for ( ; i < max; i++)
+        for ( ; i < max; ++i)
             result[i] = maxOperand[i];
         resultLength = max;
         return result;
@@ -478,9 +482,9 @@ struct InternalBasicOperators
 
         uint *result = new uint[max];
         int i = 0;
-        for ( ; i < min; i++)
+        for ( ; i < min; ++i)
             result[i] = left[i] ^ right[i];
-        for ( ; i < max; i++)
+        for ( ; i < max; ++i)
             result[i] = maxOperand[i] ^ 0;
         resultLength = max;
         while (result[resultLength - 1] == 0 && resultLength > 1)
@@ -490,7 +494,7 @@ struct InternalBasicOperators
     static uint *Not(uint *digits, int digitLength, int &resultLength)
     {
         uint *result = new uint[digitLength];
-        for(int i = 0; i < digitLength; i++)
+        for(int i = 0; i < digitLength; ++i)
             result[i] = ~digits[i];
         resultLength = digitLength;
         while (result[resultLength - 1] == 0 && resultLength > 1)
@@ -498,15 +502,15 @@ struct InternalBasicOperators
         return result;
     }
 
-    static int Compare(uint *left, int leftLength, uint *right, int rightLength)
+    static int compare(uint *left, int leftLength, uint *right, int rightLength)
     {
         int c = (int)(leftLength > rightLength);
         c = -(int)(leftLength < rightLength) * ((c + 1) & 1) + c;
-        for(int i = leftLength - 1; !c && (i >= 0); i--)
+        for(int i = leftLength - 1; !c && (i >= 0); --i)
             c = (int)(left[i] > right[i]) - (int)(left[i] < right[i]);
         return c;
     }
-    static std::string ToString(uint *digits, int digitLength, int sign)
+    static std::string toString(uint *digits, int digitLength, int sign)
     {
         if (sign == 0 || digitLength == 0) {
             return "0";
@@ -523,12 +527,12 @@ struct InternalBasicOperators
         int cuMax = digitLength * 10 / 9 + 2;
         uint *rguDst = new uint[cuMax];
         int cuDst = 0;
-        for(int i = 0; i < cuMax; i++)
+        for(int i = 0; i < cuMax; ++i)
             rguDst[i] = 0;
 
         for (int iuSrc = digitLength; --iuSrc >= 0;){
             uint uCarry = digits[iuSrc];
-            for (int iuDst = 0; iuDst < cuDst; iuDst++){
+            for (int iuDst = 0; iuDst < cuDst; ++iuDst){
                 ulong uuRes = ((ulong)rguDst[iuDst] << 32) | uCarry;
                 rguDst[iuDst] = (uint)(uuRes % kuBase);
                 uCarry = (uint)(uuRes / kuBase);
@@ -547,7 +551,7 @@ struct InternalBasicOperators
         std::shared_ptr<char[]> rgchRef(new char[rgchBufSize]);
         char *rgch = rgchRef.get();
 
-        for (int iuDst = 0; iuDst < cuDst - 1; iuDst++){
+        for (int iuDst = 0; iuDst < cuDst - 1; ++iuDst){
             uint uDig = rguDst[iuDst];
             for (int cch = 9; --cch >= 0; ){
                 int ascii = (48 + uDig % 10);
@@ -568,24 +572,87 @@ struct InternalBasicOperators
         rgch[cchMax - ichDst] = '\0';
         return std::string(rgch);
     }
-    static uint *UnsignedParse(char *value, int charLen, int &digitLength)
+    static QString toQString(uint *digits, int digitLength, int sign)
+    {
+        if (sign == 0 || digitLength == 0) {
+            return "0";
+        }
+        else if (digitLength == 1 && sign == 1){
+            char *str = new char[20];
+            sprintf(str, "%d", digits[0]);
+            QString u16str = str;
+            delete[] str;
+            return u16str;
+        }
+
+        const uint kuBase = 1000000000; // 10^9
+        int cuMax = digitLength * 10 / 9 + 2;
+        uint *rguDst = new uint[cuMax];
+        int cuDst = 0;
+        for(int i = 0; i < cuMax; ++i)
+            rguDst[i] = 0;
+
+        for (int iuSrc = digitLength; --iuSrc >= 0;){
+            uint uCarry = digits[iuSrc];
+            for (int iuDst = 0; iuDst < cuDst; ++iuDst){
+                ulong uuRes = ((ulong)rguDst[iuDst] << 32) | uCarry;
+                rguDst[iuDst] = (uint)(uuRes % kuBase);
+                uCarry = (uint)(uuRes / kuBase);
+            }
+            if (uCarry != 0){
+                rguDst[cuDst++] = uCarry % kuBase;
+                uCarry /= kuBase;
+                if (uCarry != 0)
+                    rguDst[cuDst++] = uCarry;
+            }
+        }
+        int cchMax = cuDst * 9;
+        int rgchBufSize = cchMax + 2 + (sign == -1);
+        int ichDst = cchMax;
+
+        std::shared_ptr<char[]> rgchRef(new char[rgchBufSize]);
+        char *rgch = rgchRef.get();
+
+        for (int iuDst = 0; iuDst < cuDst - 1; ++iuDst){
+            uint uDig = rguDst[iuDst];
+            for (int cch = 9; --cch >= 0; ){
+                int ascii = (48 + uDig % 10);
+                rgch[--ichDst] = (char)ascii;
+                uDig /= 10;
+            }
+        }
+        for (uint uDig = rguDst[cuDst - 1]; uDig != 0; ){
+            int ascii = (48 + uDig % 10);
+            rgch[--ichDst] = (char)ascii;
+            uDig /= 10;
+        }
+        delete[] rguDst;
+        if (sign == -1){
+            rgch[--ichDst] = '-';
+        }
+        rgch += ichDst;
+        rgch[cchMax - ichDst] = '\0';
+        return QString(rgch);
+    }
+
+    static uint *unsignedParse(char *value, int charLen, int &digitLength)
     {
         int offset = charLen & 7;
         int base108Len = (charLen >> 3);
         uint lastDigit = 0;
 
-        base108Len++;
-        for(int i = 0; i < offset; i++){
+        ++base108Len;
+        for(int i = 0; i < offset; ++i){
             lastDigit *= 10;
             lastDigit += value[i] - 48;
         }
         uint *base108Digits = new uint[base108Len];
         int uiLast = base108Len - 1;
         base108Digits[uiLast] = lastDigit;
-        for(int i = uiLast - 1; i >= 0; i--){
+        for(int i = uiLast - 1; i >= 0; --i){
             uint curDigit = 0;
             offset += 8;
-            for(int j = offset - 8; j < offset; j++){
+            for(int j = offset - 8; j < offset; ++j){
                 curDigit *= 10;
                 curDigit += value[j] - 48;
             }
@@ -597,22 +664,22 @@ struct InternalBasicOperators
         digits[0] = 0;
         int resultLength = 1;
         uint *tmp = digits;
-        digits = InternalBasicOperators::AddSingle(digits, resultLength, base108Digits[base108Len - 1], resultLength);
+        digits = InternalBasicOperators::addSingle(digits, resultLength, base108Digits[base108Len - 1], resultLength);
         delete[] tmp;
-        for(int i = base108Len - 2; i >= 0; i--){
+        for(int i = base108Len - 2; i >= 0; --i){
             tmp = digits;
-            digits = InternalBasicOperators::MulSingle(digits, resultLength, cBase, resultLength);
+            digits = InternalBasicOperators::mulSingle(digits, resultLength, cBase, resultLength);
             delete[] tmp;
             tmp = digits;
             uint base108dig = base108Digits[i];
-            digits = InternalBasicOperators::AddSingle(digits, resultLength, base108dig, resultLength);
+            digits = InternalBasicOperators::addSingle(digits, resultLength, base108dig, resultLength);
             delete[] tmp;
         }
         delete[] base108Digits;
         digitLength = resultLength;
         return digits;
     }
-    static long UnsignedBitsLength(uint *digits, int digitLength)
+    static long unsignedBitsLength(uint *digits, int digitLength)
     {
         uint uiLast = digits[digitLength - 1];
         return 32 * (long)digitLength - InternalBasicOperators::countOfZeroBitStart(uiLast);
@@ -639,199 +706,383 @@ struct InternalBasicOperators
         cbit += f;
         return cbit;
     }
+    static int getBit(uint *digits, int digitLength, long bitPosition) //Tested OK.
+    {
+        int digitPos = (int)(bitPosition / 32);
+        if (digitLength <= digitPos)
+            return 0;
+
+        int smallBitPos = (int)(bitPosition & 31);
+        return (int)((digits[digitPos] >> smallBitPos) & 1);
+    }
+
+    static long signedBitsLength(uint *digits, int digitLength, int sign) //Tested OK.
+    {
+        if (sign == 0)
+            return 1;
+        if (digitLength == 1 && digits[0] == 0)
+            return 1;
+
+        uint lastDigit = digits[digitLength - 1];
+        unsigned char lastByte = 0;
+        int bitsLength = digitLength * 32;
+
+        if ((lastByte = (unsigned char)(lastDigit >> 24)) != 0) { }
+        else if ((lastByte = (unsigned char)(lastDigit >> 16)) != 0) { bitsLength -= 8; }
+        else if ((lastByte = (unsigned char)(lastDigit >> 8)) != 0) { bitsLength -= 16; }
+        else if ((lastByte = (unsigned char)(lastDigit)) != 0) { bitsLength -= 24; }
+
+        if ((lastByte >> 7) == 1 && sign == -1)
+            bitsLength += 8;
+        return bitsLength;
+    }
+
+    static uint *fromUnsignedBytes(unsigned char *data, int data_length, bool bigEndian, int &digitLength) //Tested OK.
+    {
+        digitLength = data_length/ 4;
+        if ((data_length & 3) > 0)
+            ++digitLength;
+
+        uint *digits = new uint[digitLength];
+
+        if (bigEndian)
+        {
+            int digitPos = digitLength - 1;
+            int dataPos = 0;
+
+            int nullDataLength = data_length & 3;
+            if (nullDataLength == 1)
+            {
+                digits[digitPos--] = data[dataPos++];
+            }
+            else if (nullDataLength == 2)
+            {
+                uint digit = 0;
+                digit |= (uint)(data[dataPos++] << 8);
+                digit |= (uint)(data[dataPos++]);
+                digits[digitPos--] = digit;
+            }
+            else if (nullDataLength == 3)
+            {
+                uint digit = 0;
+                digit |= (uint)(data[dataPos++] << 16);
+                digit |= (uint)(data[dataPos++] << 8);
+                digit |= (uint)(data[dataPos++]);
+                digits[digitPos--] = digit;
+            }
+
+            while (digitPos > -1)
+            {
+                uint current = 0;
+                current |= (uint)(data[dataPos++] << 24);
+                current |= (uint)(data[dataPos++] << 16);
+                current |= (uint)(data[dataPos++] << 8);
+                current |= (uint)(data[dataPos++]);
+                digits[digitPos--] = current;
+            }
+        }
+        else
+        {
+            int digitPos = 0;
+            int dataPos = 0;
+            int lastDigitPos = digitLength - 1;
+            while (digitPos < lastDigitPos)
+            {
+                uint current = 0;
+                current |= (uint)(data[dataPos++]);
+                current |= (uint)(data[dataPos++] << 8);
+                current |= (uint)(data[dataPos++] << 16);
+                current |= (uint)(data[dataPos++] << 24);
+                digits[digitPos++] = current;
+            }
+
+            int nullDataLength = data_length & 3;
+
+            if (nullDataLength == 1)
+            {
+                digits[lastDigitPos] = data[dataPos++];
+            }
+            else if (nullDataLength == 2)
+            {
+                uint digit = 0;
+                digit |= (uint)(data[dataPos++]);
+                digit |= (uint)(data[dataPos++] << 8);
+                digits[lastDigitPos] = digit;
+            }
+            else if (nullDataLength == 3)
+            {
+                uint digit = 0;
+                digit |= (uint)(data[dataPos++]);
+                digit |= (uint)(data[dataPos++] << 8);
+                digit |= (uint)(data[dataPos++] << 16);
+                digits[lastDigitPos] = digit;
+            }
+            else if (nullDataLength == 0)
+            {
+                uint digit = 0;
+                digit |= (uint)(data[dataPos++]);
+                digit |= (uint)(data[dataPos++] << 8);
+                digit |= (uint)(data[dataPos++] << 16);
+                digit |= (uint)(data[dataPos++] << 24);
+                digits[lastDigitPos] = digit;
+            }
+        }
+        InternalBasicOperators::trim(digits, digitLength);
+        return digits;
+    }
+
+    static void trim(uint *digits, int &digitLength)
+    {
+        while (digits[digitLength - 1] == 0 && digitLength > 1)
+            digitLength--;
+    }
+};
+
+struct BigInteger::pimpl
+{
+    int _digit_length;
+    uint *_digits;
+    int _sign;
+    bool _weak = false;
+
+    ~pimpl()
+    {
+        if(this->_weak)
+            return;
+        delete[] this->_digits;
+    }
 };
 
 BigInteger::BigInteger()
 {
-    this->_sign = 0;
-    this->_digits = new uint[1];
-    this->_digits[0] = 0;
-    this->_digitLength = 1;
+    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+    this->_pimpl->_sign = 0;
+    this->_pimpl->_digits = new uint[1];
+    this->_pimpl->_digits[0] = 0;
+    this->_pimpl->_digit_length = 1;
 }
 BigInteger::BigInteger(int value)
 {
-    this->_sign = (value >> 31);
-    this->_sign = this->_sign + (int)(value > 0);
-    value *= this->_sign;
-    this->_digitLength = 1;
-    this->_digits = new uint[1];
-    this->_digits[0] = (uint)value;
+    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+    this->_pimpl->_sign = (value >> 31);
+    this->_pimpl->_sign = this->_pimpl->_sign + (int)(value > 0);
+    value *= this->_pimpl->_sign;
+    this->_pimpl->_digit_length = 1;
+    this->_pimpl->_digits = new uint[1];
+    this->_pimpl->_digits[0] = (uint)value;
 }
 BigInteger::BigInteger(uint value)
 {
-    this->_sign = value > 0;
-    this->_digitLength = 1;
-    this->_digits = new uint[1];
-    this->_digits[0] = (uint)value;
+    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+    this->_pimpl->_sign = value > 0;
+    this->_pimpl->_digit_length = 1;
+    this->_pimpl->_digits = new uint[1];
+    this->_pimpl->_digits[0] = (uint)value;
 }
 BigInteger::BigInteger(long value)
 {
-    this->_sign = (value >> 63);
-    this->_sign = this->_sign + (int)(value > 0);
-    value *= this->_sign;
+    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+    this->_pimpl->_sign = (value >> 63);
+    this->_pimpl->_sign = this->_pimpl->_sign + (int)(value > 0);
+    value *= this->_pimpl->_sign;
     int vgtuim = (int)(value > 0xffffffff);
-    this->_digitLength = 1 + vgtuim;
-    this->_digits = new uint[this->_digitLength];
-    this->_digits[vgtuim] = (uint)(value >> 32);
-    this->_digits[0] = (uint)value;
+    this->_pimpl->_digit_length = 1 + vgtuim;
+    this->_pimpl->_digits = new uint[this->_pimpl->_digit_length];
+    this->_pimpl->_digits[vgtuim] = (uint)(value >> 32);
+    this->_pimpl->_digits[0] = (uint)value;
 }
 BigInteger::BigInteger(ulong value)
 {
-    this->_sign = value > 0;
+    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+    this->_pimpl->_sign = value > 0;
     int vgtuim = (int)(value > 0xffffffff);
-    this->_digitLength = 1 + vgtuim;
-    this->_digits = new uint[this->_digitLength];
-    this->_digits[vgtuim] = (uint)(value >> 32);
-    this->_digits[0] = (uint)value;
+    this->_pimpl->_digit_length = 1 + vgtuim;
+    this->_pimpl->_digits = new uint[this->_pimpl->_digit_length];
+    this->_pimpl->_digits[vgtuim] = (uint)(value >> 32);
+    this->_pimpl->_digits[0] = (uint)value;
 }
 
-BigInteger::BigInteger(const BigInteger &big)
+BigInteger::BigInteger(char *bytes, long bytes_length, int sign, bool big_endian)
 {
-    this->_digitLength = big._digitLength;
-    this->_sign = big._sign;
-    this->_digits = new uint[big._digitLength];
-    for(int i = 0; i < this->_digitLength; i++)
-        this->_digits[i] = big._digits[i];
+    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+    this->_pimpl->_digits = InternalBasicOperators::fromUnsignedBytes(reinterpret_cast<unsigned char*>(bytes), bytes_length, big_endian, this->_pimpl->_digit_length);
+    this->_pimpl->_sign = sign;
 }
 
+BigInteger::BigInteger(const QByteArray &bytes, int sign, bool big_endian)
+{
+    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+    this->_pimpl->_digits = InternalBasicOperators::fromUnsignedBytes(reinterpret_cast<unsigned char*>(const_cast<char*>(bytes.data())), bytes.size(), big_endian, this->_pimpl->_digit_length);
+    this->_pimpl->_sign = sign;
+}
+
+//BigInteger::BigInteger(const BigInteger &value)
+//{
+//    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+//    this->_pimpl->_digit_length = value._pimpl->_digit_length;
+//    this->_pimpl->_sign = value._pimpl->_sign;
+//    this->_pimpl->_digits = new uint[this->_pimpl->_digit_length];
+//    for(int i = 0; i < this->_pimpl->_digit_length; ++i){
+//        this->_pimpl->_digits[i] = value._pimpl->_digits[i];
+//    }
+//}
+
+//BigInteger &BigInteger::operator =(const BigInteger &value)
+//{
+//    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+//    this->_pimpl->_digit_length = value._pimpl->_digit_length;
+//    this->_pimpl->_sign = value._pimpl->_sign;
+//    this->_pimpl->_digits = new uint[this->_pimpl->_digit_length];
+//    for(int i = 0; i < this->_pimpl->_digit_length; ++i){
+//        this->_pimpl->_digits[i] = value._pimpl->_digits[i];
+//    }
+//    return *this;
+//}
+
+BigInteger BigInteger::twoPowerOf(const long &exponent)
+{
+    long digitlen = (exponent >> 5) + 1;
+    uint *digits = new uint[digitlen];
+    for(int i = 0; i < digitlen; ++i)
+        digits[i] = 0;
+    digits[digitlen - 1] = 1 << (exponent & 31);
+    return BigInteger(digits, digitlen, 1, true);
+}
+
+bool BigInteger::isZero() const { return this->_pimpl->_sign == 0; }
+bool BigInteger::isOne() const { return this->_pimpl->_digit_length == 1 && this->_pimpl->_digits[0] == 1 && this->_pimpl->_sign == 1; }
+bool BigInteger::isMinusOne() const { return this->_pimpl->_digit_length == 1 && this->_pimpl->_digits[0] == 1 && this->_pimpl->_sign == -1; }
+bool BigInteger::isNegative() const { return this->_pimpl->_sign == -1; }
+bool BigInteger::isPositive() const { return this->_pimpl->_sign == 1; }
 bool BigInteger::isPowerOfTwo() const
 {
-    int uiLast = this->_digitLength - 1;
-    uint uLast = this->_digits[uiLast];
+    int uiLast = this->_pimpl->_digit_length - 1;
+    uint uLast = this->_pimpl->_digits[uiLast];
 
     if ((uLast & (uLast - 1)) != 0)
         return false;
 
-    for(int i = 0; i < uiLast; i++)
-        if(this->_digits[i] != 0)
+    for(int i = 0; i < uiLast; ++i)
+        if(this->_pimpl->_digits[i] != 0)
             return false;
 
     return true;
 }
+bool BigInteger::isEven() const { return (this->_pimpl->_digits[0] & 1) == 0; }
+bool BigInteger::isOdd() const { return (this->_pimpl->_digits[0] & 1); }
+int BigInteger::sign() const { return this->_pimpl->_sign; }
+int BigInteger::digitLength() const { return this->_pimpl->_digit_length; }
 
-BigInteger &BigInteger::add(long value)
+long BigInteger::bytesLength() const
 {
-    BigInteger v = value;
-    return this->add(v);
+    long bitlen = this->bitsLength();
+    return (bitlen >> 3) + (int)((bitlen & 7) > 0);
 }
-BigInteger &BigInteger::add(ulong value)
+long BigInteger::bitsLength() const { return InternalBasicOperators::signedBitsLength(this->_pimpl->_digits, this->_pimpl->_digit_length, this->_pimpl->_sign); }
+uint BigInteger::firstDigit() const { return this->_pimpl->_digits[0]; }
+uint *BigInteger::data() const { return this->_pimpl->_digits; }
+
+char *BigInteger::bytesData() const
 {
-    BigInteger v = value;
-    return this->add(v);
+    return reinterpret_cast<char *>(this->_pimpl->_digits);
 }
+
 BigInteger &BigInteger::add(const BigInteger &value)
 {
-    if(this->_sign == value._sign){
-        if(this->_sign == 0){
-            delete[] this->_digits;
-            this->_digits = new uint[1] { 0 };
+    if(this->_pimpl->_sign == value._pimpl->_sign){
+        if(this->_pimpl->_sign == 0){
+            delete[] this->_pimpl->_digits;
+            this->_pimpl->_digits = new uint[1] { 0 };
             return *this;
         }
-        uint *digits = InternalBasicOperators::Add(this->_digits, this->_digitLength, value._digits, value._digitLength, this->_digitLength);
-        delete[] this->_digits;
-        this->_digits = digits;
+        uint *digits = InternalBasicOperators::add(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digit_length);
+        delete[] this->_pimpl->_digits;
+        this->_pimpl->_digits = digits;
         return *this;
     } else {
-        int c = InternalBasicOperators::Compare(this->_digits, this->_digitLength, value._digits, value._digitLength);
+        int c = InternalBasicOperators::compare(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length);
         uint *digits;
         if(c == 1){
-            digits = InternalBasicOperators::Sub(this->_digits, this->_digitLength, value._digits, value._digitLength, this->_digitLength);
-            delete[] this->_digits;
-            this->_digits = digits;
+            digits = InternalBasicOperators::sub(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digit_length);
+            delete[] this->_pimpl->_digits;
+            this->_pimpl->_digits = digits;
         } else if(c == -1){
-            digits = InternalBasicOperators::Sub(value._digits, value._digitLength, this->_digits, this->_digitLength, this->_digitLength);
-            delete[] this->_digits;
-            this->_digits = digits;
-            this->_sign = value._sign;
+            digits = InternalBasicOperators::sub(value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digits, this->_pimpl->_digit_length, this->_pimpl->_digit_length);
+            delete[] this->_pimpl->_digits;
+            this->_pimpl->_digits = digits;
+            this->_pimpl->_sign = value._pimpl->_sign;
         } else {
-            delete[] this->_digits;
-            this->_digits = new uint[1] { 0 };
-            this->_digitLength = 1;
-            this->_sign = 0;
+            delete[] this->_pimpl->_digits;
+            this->_pimpl->_digits = new uint[1] { 0 };
+            this->_pimpl->_digit_length = 1;
+            this->_pimpl->_sign = 0;
         }
         return *this;
     }
 }
-BigInteger &BigInteger::sub(long value)
-{
-    BigInteger v = value;
-    return this->sub(v);
-}
-BigInteger &BigInteger::sub(ulong value)
-{
-    BigInteger v = value;
-    return this->sub(v);
-}
+
 BigInteger &BigInteger::sub(const BigInteger &value)
 {
-    if(this->_sign == -value._sign){
-        if(this->_sign == 0){
-            delete[] this->_digits;
-            this->_digits = new uint[1] { 0 };
+    if(this->_pimpl->_sign == -value._pimpl->_sign){
+        if(this->_pimpl->_sign == 0){
+            delete[] this->_pimpl->_digits;
+            this->_pimpl->_digits = new uint[1] { 0 };
             return *this;
         }
-        uint *digits = InternalBasicOperators::Add(this->_digits, this->_digitLength, value._digits, value._digitLength, this->_digitLength);
-        delete[] this->_digits;
-        this->_digits = digits;
+        uint *digits = InternalBasicOperators::add(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digit_length);
+        delete[] this->_pimpl->_digits;
+        this->_pimpl->_digits = digits;
         return *this;
     } else {
-        int c = InternalBasicOperators::Compare(this->_digits, this->_digitLength, value._digits, value._digitLength);
+        int c = InternalBasicOperators::compare(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length);
         uint *digits;
         if(c == 1){
-            digits = InternalBasicOperators::Sub(this->_digits, this->_digitLength, value._digits, value._digitLength, this->_digitLength);
-            delete[] this->_digits;
-            this->_digits = digits;
+            digits = InternalBasicOperators::sub(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digit_length);
+            delete[] this->_pimpl->_digits;
+            this->_pimpl->_digits = digits;
         } else if(c == -1){
-            digits = InternalBasicOperators::Sub(value._digits, value._digitLength, this->_digits, this->_digitLength, this->_digitLength);
-            delete[] this->_digits;
-            this->_digits = digits;
-            this->_sign = -value._sign;
+            digits = InternalBasicOperators::sub(value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digits, this->_pimpl->_digit_length, this->_pimpl->_digit_length);
+            delete[] this->_pimpl->_digits;
+            this->_pimpl->_digits = digits;
+            this->_pimpl->_sign = -value._pimpl->_sign;
         } else {
-            delete[] this->_digits;
-            this->_digits = new uint[1] { 0 };
-            this->_digitLength = 1;
-            this->_sign = 0;
+            delete[] this->_pimpl->_digits;
+            this->_pimpl->_digits = new uint[1] { 0 };
+            this->_pimpl->_digit_length = 1;
+            this->_pimpl->_sign = 0;
         }
         return *this;
     }
 }
-BigInteger &BigInteger::mul(long value)
-{
-    BigInteger v = value;
-    return this->mul(v);
-}
-BigInteger &BigInteger::mul(ulong value)
-{
-    BigInteger v = value;
-    return this->mul(v);
-}
+
 BigInteger &BigInteger::mul(const BigInteger &value)
 {
-    this->_sign = this->_sign * value._sign;
-    if(this->_sign == 0){
-        delete[] this->_digits;
-        this->_digits = new uint[1] { 0 };
-        this->_digitLength = 1;
+    this->_pimpl->_sign = this->_pimpl->_sign * value._pimpl->_sign;
+    if(this->_pimpl->_sign == 0){
+        delete[] this->_pimpl->_digits;
+        this->_pimpl->_digits = new uint[1] { 0 };
+        this->_pimpl->_digit_length = 1;
         return *this;
     }
-    uint *digits = InternalBasicOperators::Mul(this->_digits, this->_digitLength, value._digits, value._digitLength, this->_digitLength);
-    delete[] this->_digits;
-    this->_digits = digits;
+    uint *digits = InternalBasicOperators::mul(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digit_length);
+    delete[] this->_pimpl->_digits;
+    this->_pimpl->_digits = digits;
     return *this;
 }
-BigInteger &BigInteger::div(long divisor)
+
+BigInteger &BigInteger::div(const long &divisor)
 {
     long rem;
     return this->divrem(divisor, rem);
 }
-BigInteger &BigInteger::div(ulong divisor)
+BigInteger &BigInteger::div(const ulong &divisor)
 {
     ulong rem;
     return this->divrem(divisor, rem);
 }
 BigInteger &BigInteger::div(const BigInteger &divisor)
 {
-    if(((BigInteger&)divisor).isZero())
+    if(divisor.isZero())
         throw std::runtime_error("Cannot divide a number by zero.");
     BigInteger rem;
     return this->divrem(divisor, rem);
@@ -840,7 +1091,7 @@ BigInteger &BigInteger::rem(long modulus)
 {
     if(modulus == 0)
         throw std::runtime_error("Cannot divide a number by zero.");
-    if(this->_sign == 0)
+    if(this->_pimpl->_sign == 0)
         return *this;
     int modulus_sign = (modulus >> 63);
     modulus_sign = modulus_sign + (int)(modulus > 0);
@@ -850,45 +1101,45 @@ BigInteger &BigInteger::rem(long modulus)
     uint *modulus_digits = new uint[modulus_digitLength];
     modulus_digits[vgtuim] = (uint)(modulus >> 32);
     modulus_digits[0] = (uint)modulus;
-    this->_sign = this->_sign * modulus_sign;
-    if(this->_digitLength >= modulus_digitLength)
-        InternalBasicOperators::Rem(this->_digits, this->_digitLength, modulus_digits, modulus_digitLength, this->_digitLength);
+    this->_pimpl->_sign = this->_pimpl->_sign * modulus_sign;
+    if(this->_pimpl->_digit_length >= modulus_digitLength)
+        InternalBasicOperators::rem(this->_pimpl->_digits, this->_pimpl->_digit_length, modulus_digits, modulus_digitLength, this->_pimpl->_digit_length);
     return *this;
 }
-BigInteger &BigInteger::rem(ulong modulus)
+BigInteger &BigInteger::rem(const ulong &modulus)
 {
     if(modulus == 0)
         throw std::runtime_error("Cannot divide a number by zero.");
-    if(this->_sign == 0)
+    if(this->_pimpl->_sign == 0)
         return *this;
     int vgtuim = (int)(modulus > 0xffffffff);
     int modulus_digitLength = 1 + vgtuim;
     uint *modulus_digits = new uint[modulus_digitLength];
     modulus_digits[vgtuim] = (uint)(modulus >> 32);
     modulus_digits[0] = (uint)modulus;
-    if(this->_digitLength >= modulus_digitLength)
-        InternalBasicOperators::Rem(this->_digits, this->_digitLength, modulus_digits, modulus_digitLength, this->_digitLength);
+    if(this->_pimpl->_digit_length >= modulus_digitLength)
+        InternalBasicOperators::rem(this->_pimpl->_digits, this->_pimpl->_digit_length, modulus_digits, modulus_digitLength, this->_pimpl->_digit_length);
     return *this;
 }
 BigInteger &BigInteger::rem(const BigInteger &modulus)
 {
-    if(((BigInteger&)modulus).isZero())
+    if(modulus.isZero())
         throw std::runtime_error("Cannot divide a number by zero.");
-    if(this->_sign == 0)
+    if(this->_pimpl->_sign == 0)
         return *this;
-    this->_sign = this->_sign * modulus._sign;
-    if(this->_digitLength >= modulus._digitLength)
-        InternalBasicOperators::Rem(this->_digits, this->_digitLength, modulus._digits, modulus._digitLength, this->_digitLength);
+    this->_pimpl->_sign = this->_pimpl->_sign * modulus._pimpl->_sign;
+    if(this->_pimpl->_digit_length >= modulus._pimpl->_digit_length)
+        InternalBasicOperators::rem(this->_pimpl->_digits, this->_pimpl->_digit_length, modulus._pimpl->_digits, modulus._pimpl->_digit_length, this->_pimpl->_digit_length);
     return *this;
 }
-BigInteger &BigInteger::divrem(long divisor, long &remainder)
+BigInteger &BigInteger::divrem(const long &divisor, long &remainder)
 {
     BigInteger r, div = divisor;
     this->divrem(div, r);
     remainder = (long)r;
     return *this;
 }
-BigInteger &BigInteger::divrem(ulong divisor, ulong &remainder)
+BigInteger &BigInteger::divrem(const ulong &divisor, ulong &remainder)
 {
     BigInteger r, div = divisor;
     this->divrem(div, r);
@@ -899,59 +1150,59 @@ BigInteger &BigInteger::divrem(ulong divisor, ulong &remainder)
 }
 BigInteger &BigInteger::divrem(const BigInteger &divisor, BigInteger &remainder)
 {
-    if(divisor._sign == 0)
+    if(divisor._pimpl->_sign == 0)
         throw std::runtime_error("Cannot divide a number by zero.");
-    if(this->_sign == 0){
-        if(this->_digits != remainder._digits){
-            delete[] remainder._digits;
-            remainder._digits = new uint[1] { 0 };
-            remainder._digitLength = 1;
-            remainder._sign = 0;
+    if(this->_pimpl->_sign == 0){
+        if(this->_pimpl->_digits != remainder._pimpl->_digits){
+            delete[] remainder._pimpl->_digits;
+            remainder._pimpl->_digits = new uint[1] { 0 };
+            remainder._pimpl->_digit_length = 1;
+            remainder._pimpl->_sign = 0;
         }
         return *this;
     } else {
-        this->_sign = this->_sign * divisor._sign;
-        remainder._sign = this->_sign;
-        int c = InternalBasicOperators::Compare(this->_digits, this->_digitLength, divisor._digits, divisor._digitLength);
+        this->_pimpl->_sign = this->_pimpl->_sign * divisor._pimpl->_sign;
+        remainder._pimpl->_sign = this->_pimpl->_sign;
+        int c = InternalBasicOperators::compare(this->_pimpl->_digits, this->_pimpl->_digit_length, divisor._pimpl->_digits, divisor._pimpl->_digit_length);
         if(c == -1){
-            if(this->_digits != remainder._digits){
-                delete[] remainder._digits;
-                remainder._digits = this->_digits;
-                remainder._digitLength = this->_digitLength;
-                this->_digits = new uint[1] { 0 };
-                this->_digitLength = 1;
-                this->_sign = 0;
+            if(this->_pimpl->_digits != remainder._pimpl->_digits){
+                delete[] remainder._pimpl->_digits;
+                remainder._pimpl->_digits = this->_pimpl->_digits;
+                remainder._pimpl->_digit_length = this->_pimpl->_digit_length;
+                this->_pimpl->_digits = new uint[1] { 0 };
+                this->_pimpl->_digit_length = 1;
+                this->_pimpl->_sign = 0;
             }
             return *this;
         } else if (c == 0){
-            if(this->_digits == remainder._digits){
-                delete[] this->_digits;
-                this->_digits = new uint[1] { 0 };
-                this->_digitLength = 1;
+            if(this->_pimpl->_digits == remainder._pimpl->_digits){
+                delete[] this->_pimpl->_digits;
+                this->_pimpl->_digits = new uint[1] { 0 };
+                this->_pimpl->_digit_length = 1;
             } else {
-                delete[] this->_digits;
-                this->_digits = new uint[1] { 1 };
-                this->_digitLength = 1;
-                delete[] remainder._digits;
-                remainder._digits = new uint[1] { 0 };
-                remainder._digitLength = 1;
-                remainder._sign = 0;
+                delete[] this->_pimpl->_digits;
+                this->_pimpl->_digits = new uint[1] { 1 };
+                this->_pimpl->_digit_length = 1;
+                delete[] remainder._pimpl->_digits;
+                remainder._pimpl->_digits = new uint[1] { 0 };
+                remainder._pimpl->_digit_length = 1;
+                remainder._pimpl->_sign = 0;
             }
             return *this;
         }else {
             int quotientLength, remainderLength;
-            uint *quot = InternalBasicOperators::DivRem(this->_digits, this->_digitLength, divisor._digits, divisor._digitLength, quotientLength, remainderLength);
-            if(this->_digits == remainder._digits){
+            uint *quot = InternalBasicOperators::divrem(this->_pimpl->_digits, this->_pimpl->_digit_length, divisor._pimpl->_digits, divisor._pimpl->_digit_length, quotientLength, remainderLength);
+            if(this->_pimpl->_digits == remainder._pimpl->_digits){
                 delete[] quot;
-                this->_digitLength = remainderLength;
+                this->_pimpl->_digit_length = remainderLength;
                 return *this;
             } else {
-                delete[] remainder._digits;
-                remainder._digits = this->_digits;
-                remainder._digitLength = remainderLength;
-                this->_digits = quot;
-                this->_digitLength = quotientLength;
-                remainder._sign = (!(remainder._digitLength == 1 && !remainder._digits[0])) * remainder._sign;
+                delete[] remainder._pimpl->_digits;
+                remainder._pimpl->_digits = this->_pimpl->_digits;
+                remainder._pimpl->_digit_length = remainderLength;
+                this->_pimpl->_digits = quot;
+                this->_pimpl->_digit_length = quotientLength;
+                remainder._pimpl->_sign = (!(remainder._pimpl->_digit_length == 1 && !remainder._pimpl->_digits[0])) * remainder._pimpl->_sign;
             }
             return *this;
         }
@@ -960,24 +1211,24 @@ BigInteger &BigInteger::divrem(const BigInteger &divisor, BigInteger &remainder)
 
 BigInteger BigInteger::add(const BigInteger &left, const BigInteger &right)
 {
-    if(left._sign == right._sign){
-        if(left._sign == 0){
+    if(left._pimpl->_sign == right._pimpl->_sign){
+        if(left._pimpl->_sign == 0){
             uint *digits = new uint[1] { 0 };
             return BigInteger(digits, 1, 0, true);
         }
         int resultLength;
-        uint *digits = InternalBasicOperators::Add(left._digits, left._digitLength, right._digits, right._digitLength, resultLength);
-        return BigInteger(digits, resultLength, left._sign, resultLength);
+        uint *digits = InternalBasicOperators::add(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length, resultLength);
+        return BigInteger(digits, resultLength, left._pimpl->_sign, resultLength);
     } else {
-        int c = InternalBasicOperators::Compare(left._digits, left._digitLength, right._digits, right._digitLength);
+        int c = InternalBasicOperators::compare(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length);
         if(c == 1){
             int resultLength;
-            uint *digits = InternalBasicOperators::Sub(left._digits, left._digitLength, right._digits, right._digitLength, resultLength);
-            return BigInteger(digits, resultLength, left._sign, true);
+            uint *digits = InternalBasicOperators::sub(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length, resultLength);
+            return BigInteger(digits, resultLength, left._pimpl->_sign, true);
         } else if(c == -1){
             int resultLength;
-            uint *digits = InternalBasicOperators::Sub(right._digits, right._digitLength, left._digits, left._digitLength, resultLength);
-            return BigInteger(digits, resultLength, right._sign, true);
+            uint *digits = InternalBasicOperators::sub(right._pimpl->_digits, right._pimpl->_digit_length, left._pimpl->_digits, left._pimpl->_digit_length, resultLength);
+            return BigInteger(digits, resultLength, right._pimpl->_sign, true);
         } else {
             uint *digits = new uint[1] { 0 };
             return BigInteger(digits, 1, 0, true);
@@ -986,23 +1237,23 @@ BigInteger BigInteger::add(const BigInteger &left, const BigInteger &right)
 }
 BigInteger BigInteger::sub(const BigInteger &left, const BigInteger &right)
 {
-    if(left._sign == -right._sign){
-        if(left._sign == 0){
+    if(left._pimpl->_sign == -right._pimpl->_sign){
+        if(left._pimpl->_sign == 0){
             return BigInteger(0u);
         }
         int resultLength;
-        uint *digits = InternalBasicOperators::Add(left._digits, left._digitLength, right._digits, right._digitLength, resultLength);
-        return BigInteger(digits, resultLength, left._sign, true);
+        uint *digits = InternalBasicOperators::add(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length, resultLength);
+        return BigInteger(digits, resultLength, left._pimpl->_sign, true);
     } else {
-        int c = InternalBasicOperators::Compare(left._digits, left._digitLength, right._digits, right._digitLength);
+        int c = InternalBasicOperators::compare(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length);
         if(c == 1){
             int resultLength;
-            uint *digits = InternalBasicOperators::Sub(left._digits, left._digitLength, right._digits, right._digitLength, resultLength);
-            return BigInteger(digits, resultLength, left._sign, true);
+            uint *digits = InternalBasicOperators::sub(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length, resultLength);
+            return BigInteger(digits, resultLength, left._pimpl->_sign, true);
         } else if(c == -1){
             int resultLength;
-            uint *digits = InternalBasicOperators::Sub(right._digits, right._digitLength, left._digits, left._digitLength, resultLength);
-            return BigInteger(digits, resultLength, -right._sign, true);
+            uint *digits = InternalBasicOperators::sub(right._pimpl->_digits, right._pimpl->_digit_length, left._pimpl->_digits, left._pimpl->_digit_length, resultLength);
+            return BigInteger(digits, resultLength, -right._pimpl->_sign, true);
         } else {
             return BigInteger(0u);
         }
@@ -1010,33 +1261,33 @@ BigInteger BigInteger::sub(const BigInteger &left, const BigInteger &right)
 }
 BigInteger BigInteger::mul(const BigInteger &left, const BigInteger &right)
 {
-    int result_sign = left._sign * right._sign;
+    int result_sign = left._pimpl->_sign * right._pimpl->_sign;
     if(result_sign == 0)
         return BigInteger(0u);
 
     int resultLength;
-    uint *digits = InternalBasicOperators::Mul(left._digits, left._digitLength, right._digits, right._digitLength, resultLength);
+    uint *digits = InternalBasicOperators::mul(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length, resultLength);
     return BigInteger(digits, resultLength, result_sign, true);
 }
 BigInteger BigInteger::div(const BigInteger &dividend, const BigInteger &divisor)
 {
-    if(divisor._sign == 0)
+    if(divisor._pimpl->_sign == 0)
         throw std::runtime_error("Cannot divide a number by zero.");
-    if(dividend._sign == 0){
+    if(dividend._pimpl->_sign == 0){
         return BigInteger(0u);
     } else {
-        int c = InternalBasicOperators::Compare(dividend._digits, dividend._digitLength, divisor._digits, divisor._digitLength);
-        int result_sign = dividend._sign * divisor._sign;
+        int c = InternalBasicOperators::compare(dividend._pimpl->_digits, dividend._pimpl->_digit_length, divisor._pimpl->_digits, divisor._pimpl->_digit_length);
+        int result_sign = dividend._pimpl->_sign * divisor._pimpl->_sign;
         if(c == -1)
             return BigInteger(0u);
         else if (c == 0)
             return BigInteger(result_sign);
         else {
             int quotientLength, remainderLength;
-            uint *remainder = new uint[dividend._digitLength];
-            for(int i = 0; i < dividend._digitLength; i++)
-                remainder[i] = dividend._digits[i];
-            uint *quot = InternalBasicOperators::DivRem(remainder, dividend._digitLength, divisor._digits, divisor._digitLength, quotientLength, remainderLength);
+            uint *remainder = new uint[dividend._pimpl->_digit_length];
+            for(int i = 0; i < dividend._pimpl->_digit_length; ++i)
+                remainder[i] = dividend._pimpl->_digits[i];
+            uint *quot = InternalBasicOperators::divrem(remainder, dividend._pimpl->_digit_length, divisor._pimpl->_digits, divisor._pimpl->_digit_length, quotientLength, remainderLength);
             delete[] remainder;
             return BigInteger(quot, quotientLength, result_sign, true);
         }
@@ -1044,44 +1295,44 @@ BigInteger BigInteger::div(const BigInteger &dividend, const BigInteger &divisor
 }
 BigInteger BigInteger::rem(const BigInteger &dividend, const BigInteger &divisor)
 {
-    if(((BigInteger&)divisor).isZero())
+    if(divisor.isZero())
         throw std::runtime_error("Cannot divide a number by zero.");
-    if(dividend._sign == 0)
+    if(dividend._pimpl->_sign == 0)
         return BigInteger(0u);
-    if(dividend._digitLength >= divisor._digitLength){
-        uint *remainder = new uint[dividend._digitLength];
-        for(int i = 0; i < dividend._digitLength; i++)
-            remainder[i] = dividend._digits[i];
+    if(dividend._pimpl->_digit_length >= divisor._pimpl->_digit_length){
+        uint *remainder = new uint[dividend._pimpl->_digit_length];
+        for(int i = 0; i < dividend._pimpl->_digit_length; ++i)
+            remainder[i] = dividend._pimpl->_digits[i];
         int remainderLength;
-        InternalBasicOperators::Rem(remainder, dividend._digitLength, divisor._digits, divisor._digitLength, remainderLength);
-        return BigInteger(remainder, remainderLength, dividend._sign * divisor._sign, true);
+        InternalBasicOperators::rem(remainder, dividend._pimpl->_digit_length, divisor._pimpl->_digits, divisor._pimpl->_digit_length, remainderLength);
+        return BigInteger(remainder, remainderLength, dividend._pimpl->_sign * divisor._pimpl->_sign, true);
     } else {
-        BigInteger rem = ((BigInteger&)dividend).clone();
-        rem._sign *= divisor._sign;
+        BigInteger rem = dividend.clone();
+        rem._pimpl->_sign *= divisor._pimpl->_sign;
         return rem;
     }
 }
 BigInteger BigInteger::divrem(const BigInteger &dividend, const BigInteger &divisor, BigInteger &remainder)
 {
-    if(dividend._digits == remainder._digits)
-        return ((BigInteger&)dividend).divrem(divisor, remainder);
-    if(divisor._sign == 0)
+    if(dividend._pimpl->_digits == remainder._pimpl->_digits)
+        return dividend.clone().divrem(divisor, remainder);
+    if(divisor._pimpl->_sign == 0)
         throw std::runtime_error("Cannot divide a number by zero.");
-    if(dividend._sign == 0){
+    if(dividend._pimpl->_sign == 0){
         return BigInteger(0u);
     } else {
-        int result_sign = dividend._sign * divisor._sign;
-        remainder._sign = result_sign;
-        delete[] remainder._digits;
-        remainder._digits = new uint[dividend._digitLength];
-        for(int i = 0; i < dividend._digitLength; i++)
-            remainder._digits[i] = dividend._digits[i];
-        if(dividend._digitLength >= divisor._digitLength) {
+        int result_sign = dividend._pimpl->_sign * divisor._pimpl->_sign;
+        remainder._pimpl->_sign = result_sign;
+        delete[] remainder._pimpl->_digits;
+        remainder._pimpl->_digits = new uint[dividend._pimpl->_digit_length];
+        for(int i = 0; i < dividend._pimpl->_digit_length; ++i)
+            remainder._pimpl->_digits[i] = dividend._pimpl->_digits[i];
+        if(dividend._pimpl->_digit_length >= divisor._pimpl->_digit_length) {
             int quotientLength;
-            uint *quot = InternalBasicOperators::DivRem(remainder._digits, dividend._digitLength, divisor._digits, divisor._digitLength, quotientLength, remainder._digitLength);
+            uint *quot = InternalBasicOperators::divrem(remainder._pimpl->_digits, dividend._pimpl->_digit_length, divisor._pimpl->_digits, divisor._pimpl->_digit_length, quotientLength, remainder._pimpl->_digit_length);
             return BigInteger(quot, quotientLength, result_sign, true);
         } else {
-            remainder._digitLength = dividend._digitLength;
+            remainder._pimpl->_digit_length = dividend._pimpl->_digit_length;
             return BigInteger(0u);
         }
     }
@@ -1089,59 +1340,69 @@ BigInteger BigInteger::divrem(const BigInteger &dividend, const BigInteger &divi
 BigInteger BigInteger::bitOr(const BigInteger &left, const BigInteger &right)
 {
     int resultLength;
-    uint *digits = InternalBasicOperators::Or(left._digits, left._digitLength, right._digits, right._digitLength, resultLength);
+    uint *digits = InternalBasicOperators::Or(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length, resultLength);
     return BigInteger(digits, resultLength, (int)(resultLength != 1 || digits[0] != 0), true);
 }
 BigInteger BigInteger::bitAnd(const BigInteger &left, const BigInteger &right)
 {
     int resultLength;
-    uint *digits = InternalBasicOperators::And(left._digits, left._digitLength, right._digits, right._digitLength, resultLength);
+    uint *digits = InternalBasicOperators::And(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length, resultLength);
     return BigInteger(digits, resultLength, (int)(resultLength != 1 || digits[0] != 0), true);
 }
 BigInteger BigInteger::bitXor(const BigInteger &left, const BigInteger &right)
 {
     int resultLength;
-    uint *digits = InternalBasicOperators::Xor(left._digits, left._digitLength, right._digits, right._digitLength, resultLength);
+    uint *digits = InternalBasicOperators::Xor(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length, resultLength);
     return BigInteger(digits, resultLength, (int)(resultLength != 1 || digits[0] != 0), true);
 }
 
-BigInteger &BigInteger::bitshift(int shift)
+BigInteger &BigInteger::bitshift(const int &shift)
 {
     uint *digits;
     if(shift > 0)
-        digits = InternalBasicOperators::ShiftLeft(this->_digits, this->_digitLength, shift, this->_digitLength);
+        digits = InternalBasicOperators::shiftLeft(this->_pimpl->_digits, this->_pimpl->_digit_length, shift, this->_pimpl->_digit_length);
     else
-        digits = InternalBasicOperators::ShiftRight(this->_digits, this->_digitLength, -shift, this->_digitLength);
-    delete[] this->_digits;
-    this->_digits = digits;
+        digits = InternalBasicOperators::shiftRight(this->_pimpl->_digits, this->_pimpl->_digit_length, -shift, this->_pimpl->_digit_length);
+    delete[] this->_pimpl->_digits;
+    this->_pimpl->_digits = digits;
     return *this;
+}
+
+BigInteger &BigInteger::rightShift(const int &shift)
+{
+    return this->bitshift(-shift);
+}
+
+BigInteger &BigInteger::leftShift(const int &shift)
+{
+    return this->bitshift(shift);
 }
 BigInteger &BigInteger::bitAnd(const BigInteger &value)
 {
-    uint *digits = InternalBasicOperators::And(this->_digits, this->_digitLength, value._digits, value._digitLength, this->_digitLength);
-    delete[] this->_digits;
-    this->_digits = digits;
+    uint *digits = InternalBasicOperators::And(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digit_length);
+    delete[] this->_pimpl->_digits;
+    this->_pimpl->_digits = digits;
     return *this;
 }
 BigInteger &BigInteger::bitOr(const BigInteger &value)
 {
-    uint *digits = InternalBasicOperators::Or(this->_digits, this->_digitLength, value._digits, value._digitLength, this->_digitLength);
-    delete[] this->_digits;
-    this->_digits = digits;
+    uint *digits = InternalBasicOperators::Or(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digit_length);
+    delete[] this->_pimpl->_digits;
+    this->_pimpl->_digits = digits;
     return *this;
 }
 BigInteger &BigInteger::bitXor(const BigInteger &value)
 {
-    uint *digits = InternalBasicOperators::Xor(this->_digits, this->_digitLength, value._digits, value._digitLength, this->_digitLength);
-    delete[] this->_digits;
-    this->_digits = digits;
+    uint *digits = InternalBasicOperators::Xor(this->_pimpl->_digits, this->_pimpl->_digit_length, value._pimpl->_digits, value._pimpl->_digit_length, this->_pimpl->_digit_length);
+    delete[] this->_pimpl->_digits;
+    this->_pimpl->_digits = digits;
     return *this;
 }
 BigInteger &BigInteger::complement()
 {
-    uint *digits = InternalBasicOperators::Not(this->_digits, this->_digitLength, this->_digitLength);
-    delete[] this->_digits;
-    this->_digits = digits;
+    uint *digits = InternalBasicOperators::Not(this->_pimpl->_digits, this->_pimpl->_digit_length, this->_pimpl->_digit_length);
+    delete[] this->_pimpl->_digits;
+    this->_pimpl->_digits = digits;
     return *this;
 }
 BigInteger &BigInteger::decrease()
@@ -1154,16 +1415,22 @@ BigInteger &BigInteger::increase()
 }
 BigInteger &BigInteger::negate()
 {
-    this->_sign *= -1;
+    this->_pimpl->_sign *= -1;
     return *this;
 }
 BigInteger &BigInteger::square()
 {
     return this->mul(*this);
 }
+
+BigInteger &BigInteger::cube()
+{
+    BigInteger sq = this->clone().mul(*this);
+    return this->mul(sq);
+}
 BigInteger &BigInteger::abs()
 {
-    this->_sign *= this->_sign;
+    this->_pimpl->_sign *= this->_pimpl->_sign;
     return *this;
 }
 BigInteger &BigInteger::pow(uint exponent)
@@ -1171,17 +1438,17 @@ BigInteger &BigInteger::pow(uint exponent)
     if (exponent == 1)
         return *this;
     if (exponent == 0){
-        delete[] this->_digits;
-        this->_digits = new uint[1] { 1 };
-        this->_digitLength = 1;
-        this->_sign = 1;
+        delete[] this->_pimpl->_digits;
+        this->_pimpl->_digits = new uint[1] { 1 };
+        this->_pimpl->_digit_length = 1;
+        this->_pimpl->_sign = 1;
     }
     BigInteger value = this->clone();
     if (!(exponent & 1)){
-        delete[] this->_digits;
-        this->_digits = new uint[1] { 1 };
-        this->_digitLength = 1;
-        this->_sign = 1;
+        delete[] this->_pimpl->_digits;
+        this->_pimpl->_digits = new uint[1] { 1 };
+        this->_pimpl->_digit_length = 1;
+        this->_pimpl->_sign = 1;
     }
 
     exponent >>= 1;
@@ -1195,33 +1462,60 @@ BigInteger &BigInteger::pow(uint exponent)
     return *this;
 }
 
-void BigInteger::assign(uint value)
+void BigInteger::assign(const uint &value)
 {
-    this->_digitLength = 1;
-    this->_digits[0] = value;
-    this->_sign = value > 0;
+    this->_pimpl->_digit_length = 1;
+    this->_pimpl->_digits[0] = value;
+    this->_pimpl->_sign = value > 0;
+}
+
+int BigInteger::bit(const long &pos) const
+{
+    if (this->_pimpl->_sign == 0)
+        return 0;
+    if (pos > this->bitsLength())
+        return 0;
+    int bit = InternalBasicOperators::getBit(this->_pimpl->_digits, this->_pimpl->_digit_length, pos);
+    if (this->_pimpl->_sign == 1)
+        return bit;
+    else
+        return ~bit;
 }
 
 std::string BigInteger::toString() const
 {
-    if(this->_digitLength == 1){
+    if(this->_pimpl->_digit_length == 1){
         char buffer[50];
-        int len = sprintf(&buffer[1], "%u", this->_digits[0]);
+        int len = sprintf(&buffer[1], "%u", this->_pimpl->_digits[0]);
         buffer[len + 1] = 0;
         buffer[0] = '-';
-        return std::string((const char *)&buffer[(this->_sign + 2) >> 1]);
-    }else{
-        return InternalBasicOperators::ToString(this->_digits, this->_digitLength, this->_sign);
+        return std::string((const char *)&buffer[(this->_pimpl->_sign + 2) >> 1]);
+    } else {
+        return InternalBasicOperators::toString(this->_pimpl->_digits, this->_pimpl->_digit_length, this->_pimpl->_sign);
+    }
+}
+
+QString BigInteger::toQString() const
+{
+    if(this->_pimpl->_digit_length == 1){
+        char buffer[50];
+        int len = sprintf(&buffer[1], "%u", this->_pimpl->_digits[0]);
+        buffer[len + 1] = 0;
+        buffer[0] = '-';
+        return QString((const char *)&buffer[(this->_pimpl->_sign + 2) >> 1]);
+    } else {
+        return InternalBasicOperators::toQString(this->_pimpl->_digits, this->_pimpl->_digit_length, this->_pimpl->_sign);
     }
 }
 
 BigInteger BigInteger::clone() const
 {
-    uint *digits = new uint[this->_digitLength];
-    for(int i = 0; i < this->_digitLength; i++)
-        digits[i] = this->_digits[i];
-    return BigInteger(digits, this->_digitLength, this->_sign, true);
+    uint *digits = new uint[this->_pimpl->_digit_length];
+    for(int i = 0; i < this->_pimpl->_digit_length; ++i)
+        digits[i] = this->_pimpl->_digits[i];
+    return BigInteger(digits, this->_pimpl->_digit_length, this->_pimpl->_sign, true);
 }
+
 BigInteger BigInteger::parse(const char *chars)
 {
     char *value = (char *)chars;
@@ -1235,20 +1529,20 @@ BigInteger BigInteger::parse(const char *chars)
     while(c != 0){
         if(c < 48 || 57 < c)
             throw std::runtime_error("Used invalid numeric literal for parsing string.");
-        count++;
+        ++count;
         c = value[count];
     }
 
     int zeroTrim = 0;
     c = value[0];
     while(c == 48){
-        zeroTrim++;
+        ++zeroTrim;
         c = value[zeroTrim];
     }
     char *start = &value[zeroTrim];
     count -= zeroTrim;
     int digitLength;
-    uint *digits = InternalBasicOperators::UnsignedParse(start, count, digitLength);
+    uint *digits = InternalBasicOperators::unsignedParse(start, count, digitLength);
     if(digitLength == 1 && digits[0] == 0)
         sign = 0;
     return BigInteger(digits, digitLength, sign, true);
@@ -1256,6 +1550,93 @@ BigInteger BigInteger::parse(const char *chars)
 BigInteger BigInteger::parse(const std::string &value)
 {
     return BigInteger::parse(value.c_str());
+}
+
+BigInteger BigInteger::parseFromHex(std::string hex)
+{
+    bool isNeg = hex[0] == ('-');
+    if (isNeg)
+        hex = hex.substr(1, hex.size() - 1);
+
+    std::transform(hex.begin(), hex.end(), hex.begin(), ::tolower);
+
+    if (hex.rfind("0x") == 0)
+        hex = hex.substr(2, hex.size() - 2);
+
+    int byteLength = (hex.size() + 1) / 2;
+    unsigned char *bytes = new unsigned char[byteLength];
+    for(int i = 0; i < byteLength; ++i)
+        bytes[i] = 0;
+
+    std::string zero = "0";
+    if ((hex.size() & 1) == 1)
+        hex = zero.append(hex);
+    for (int i = 0; i < byteLength; ++i)
+    {
+        char c1 = hex[2 * i];
+        char c2 = hex[2 * i + 1];
+        if (c1 > 96)
+            bytes[i] |= (unsigned char)((c1 - 87) << 4);
+        else
+            bytes[i] |= (unsigned char)((c1 - 48) << 4);
+
+        if (c2 > 96)
+            bytes[i] |= (unsigned char)((c2 - 87));
+        else
+            bytes[i] |= (unsigned char)((c2 - 48));
+    }
+    int digitLength;
+    uint *digits = InternalBasicOperators::fromUnsignedBytes(bytes, byteLength, true, digitLength);
+    delete[] bytes;
+    if (digitLength == 1 && digits[0] == 0)
+        return 0;
+    return BigInteger(digits, digitLength, isNeg ? -1 : 1, true);
+}
+
+BigInteger BigInteger::random(const long &bytes_length)
+{
+    QByteArray bytes = DRBG::fromRandomSeed().generate(bytes_length);
+    return BigInteger(bytes.data(), bytes_length, 1);
+}
+
+void BigInteger::swap(BigInteger &l, BigInteger &r)
+{
+    BigInteger t = r;
+    r = l.clone();
+    l = t.clone();
+}
+
+std::vector<int> BigInteger::nonAdjacentForm(const int &window) const
+{
+    BigInteger d = this->clone();
+    int modulus = 1 << window;
+
+    std::vector<int> naf;
+    naf.resize(d.bitsLength() + 1, 0);
+
+    int modMinOne = modulus - 1;
+    int halfOfModulus = modulus >> 1;
+    for (int i = 0; !d.isZero(); ++i)
+    {
+        if (d.isOdd())
+        {
+            int mod = (int)d.firstDigit() & modMinOne; //d mod 2 ^ w
+
+            if (mod >= halfOfModulus)
+            {
+                int inc = modulus - mod;
+                naf[i] = -inc;
+                d += inc;
+            }
+            else
+            {
+                naf[i] = mod;
+                d -= (uint)mod;
+            }
+        }
+        d = d >> 1;
+    }
+    return naf;
 }
 
 int BigInteger::compare(const BigInteger &left, long right)
@@ -1269,11 +1650,11 @@ int BigInteger::compare(const BigInteger &left, long right)
     right_digits[vgtuim] = (uint)(right >> 32);
     right_digits[0] = (uint)right;
 
-    if(left._sign < right_sign)
+    if(left._pimpl->_sign < right_sign)
         return -1;
-    if(left._sign > right_sign)
+    if(left._pimpl->_sign > right_sign)
         return 1;
-    return InternalBasicOperators::Compare(left._digits, left._digitLength, right_digits, right_digitLength);
+    return InternalBasicOperators::compare(left._pimpl->_digits, left._pimpl->_digit_length, right_digits, right_digitLength);
 
 }
 int BigInteger::compare(const BigInteger &left, ulong right)
@@ -1285,75 +1666,22 @@ int BigInteger::compare(const BigInteger &left, ulong right)
     right_digits[vgtuim] = (uint)(right >> 32);
     right_digits[0] = (uint)right;
 
-    if(left._sign < right_sign)
+    if(left._pimpl->_sign < right_sign)
         return -1;
-    if(left._sign > right_sign)
+    if(left._pimpl->_sign > right_sign)
         return 1;
-    return InternalBasicOperators::Compare(left._digits, left._digitLength, right_digits, right_digitLength);
+    return InternalBasicOperators::compare(left._pimpl->_digits, left._pimpl->_digit_length, right_digits, right_digitLength);
 }
 int BigInteger::compare(const BigInteger &left, const BigInteger &right)
 {
-    if(left._sign > right._sign)
+    if(left._pimpl->_sign > right._pimpl->_sign)
         return 1;
-    if(left._sign < right._sign)
+    if(left._pimpl->_sign < right._pimpl->_sign)
         return -1;
-    return InternalBasicOperators::Compare(left._digits, left._digitLength, right._digits, right._digitLength);
+    return InternalBasicOperators::compare(left._pimpl->_digits, left._pimpl->_digit_length, right._pimpl->_digits, right._pimpl->_digit_length);
 }
 
-BigInteger &BigInteger::operator=(int value)
-{
-    this->_sign = (value >> 31);
-    this->_sign = this->_sign + (int)(value > 0);
-    value *= this->_sign;
-    this->_digitLength = 1;
-    this->_digits = new uint[1];
-    this->_digits[0] = (uint)value;
-    return *this;
-}
-BigInteger &BigInteger::operator=(uint value)
-{
-    this->_sign = value > 0;
-    this->_digitLength = 1;
-    this->_digits = new uint[1];
-    this->_digits[0] = (uint)value;
-    return *this;
-}
-BigInteger &BigInteger::operator=(long value)
-{
-    this->_sign = (value >> 63);
-    this->_sign = this->_sign + (int)(value > 0);
-    value *= this->_sign;
-    int vgtuim = (int)(value > 0xffffffff);
-    this->_digitLength = 1 + vgtuim;
-    this->_digits = new uint[this->_digitLength];
-    this->_digits[vgtuim] = (uint)(value >> 32);
-    this->_digits[0] = (uint)value;
-    return *this;
-}
-BigInteger &BigInteger::operator=(ulong value)
-{
-    this->_sign = value > 0;
-    int vgtuim = (int)(value > 0xffffffff);
-    this->_digitLength = 1 + vgtuim;
-    this->_digits = new uint[this->_digitLength];
-    this->_digits[vgtuim] = (uint)(value >> 32);
-    this->_digits[0] = (uint)value;
-    return *this;
-}
-BigInteger &BigInteger::operator=(const BigInteger &big)
-{
-    if(this->_digits != big._digits){
-        delete[] this->_digits;
-        this->_digits = new uint[big._digitLength];
-        this->_digitLength = big._digitLength;
-        this->_sign = big._sign;
-        for(int i = 0; i < this->_digitLength; i++)
-            this->_digits[i] = big._digits[i];
-    }
-    return *this;
-}
-
-BigInteger BigInteger::pow(BigInteger value, uint exponent)
+BigInteger BigInteger::pow(const BigInteger &value, uint exponent)
 {
     if (exponent == 1)
         return value;
@@ -1364,12 +1692,13 @@ BigInteger BigInteger::pow(BigInteger value, uint exponent)
     if (exponent & 1)
         res = value;
 
+    BigInteger vsq = value.clone();
     exponent >>= 1;
     while (exponent != 0)
     {
-        value.square();
+        vsq.square();
         if ((exponent & 1) == 1)
-            res.mul(value);
+            res.mul(vsq);
         exponent >>= 1;
     }
     return res;
@@ -1395,7 +1724,7 @@ BigInteger BigInteger::factorial(uint value)
     uint *a = new uint[t];
     uint shift = 0;
 
-    for (uint i = 0; i < t; i++){
+    for (uint i = 0; i < t; ++i){
         if ((value & 1) == 1){
             value = a[i] = value >> 1;
             shift += value;
@@ -1407,10 +1736,10 @@ BigInteger BigInteger::factorial(uint value)
     }
     BigInteger inner = BigInteger(1u), T = BigInteger(1u);
     uint abovePi, belowPi;
-    for (uint i = 1; i < t; i++){
+    for (uint i = 1; i < t; ++i){
         abovePi = a[i - 1];
         belowPi = a[i] + 1;
-        for (uint j = belowPi; j <= abovePi; j++)
+        for (uint j = belowPi; j <= abovePi; ++j)
             inner.mul((j << 1) | 1);
         inner.pow(i);
         T.mul(inner);
@@ -1450,8 +1779,8 @@ BigInteger BigInteger::factorize(BigInteger &value)
 }
 BigInteger BigInteger::gcd(const BigInteger &left, const BigInteger &right)
 {
-    if (((BigInteger&)right).isZero())
-        return ((BigInteger&)left).clone();
+    if (right.isZero())
+        return left.clone();
     else{
         BigInteger rem = left % right; //BigInteger::rem(left, right);
         return BigInteger::gcd(right, rem);
@@ -1465,41 +1794,42 @@ BigInteger BigInteger::lcm(const BigInteger &left, const BigInteger &right)
     gcd.mul(leftFac).mul(rightFac);
     return gcd;
 }
-BigInteger BigInteger::modpow(BigInteger value, const BigInteger &exponent, const BigInteger &modulus)
+BigInteger BigInteger::modpow(const BigInteger &value, const BigInteger &exponent, const BigInteger &modulus)
 {
-    if(((BigInteger&)modulus).isNegative())
+    if(modulus.isNegative())
         throw std::runtime_error("modulus cannot be negative");
     if(value.isZero())
         return BigInteger(0u);
-    if(value.isNegative() && ((BigInteger&)exponent).isNegative())
+    if(value.isNegative() && exponent.isNegative())
         throw std::runtime_error("value and exponent cannot be negative currently");
-    if(((BigInteger&)exponent).isNegative())
-        value = BigInteger::modInverse(value, modulus);
+    BigInteger temp_value = value.clone();
+    if(exponent.isNegative())
+        temp_value = BigInteger::modInverse(temp_value, modulus);
 
     BigInteger result = BigInteger(1u);
-    long bitLength = InternalBasicOperators::UnsignedBitsLength(exponent._digits, exponent._digitLength);
-    for (long i = 0; i < bitLength; i++)
+    long bitLength = InternalBasicOperators::unsignedBitsLength(exponent._pimpl->_digits, exponent._pimpl->_digit_length);
+    for (long i = 0; i < bitLength; ++i)
     {
         int bit = 0;
         int digitPos = (int)(i >> 5);
-        if(digitPos < exponent._digitLength)
-            bit = (exponent._digits[digitPos] >> (i & 31)) & 1;
-        if (value._digitLength > modulus._digitLength)
-            value.divrem(modulus, value);
+        if(digitPos < exponent._pimpl->_digit_length)
+            bit = (exponent._pimpl->_digits[digitPos] >> (i & 31)) & 1;
+        if (temp_value._pimpl->_digit_length > modulus._pimpl->_digit_length)
+            temp_value.divrem(modulus, temp_value);
         if (bit == 1)
         {
-            result.mul(value);
-            if (result._digitLength > modulus._digitLength)
+            result.mul(temp_value);
+            if (result._pimpl->_digit_length > modulus._pimpl->_digit_length)
                 result.divrem(modulus, result);
         }
-        value.square();
+        temp_value.square();
     }
     result.divrem(modulus, result);
     return result;
 }
 BigInteger BigInteger::squareroot(const BigInteger &value)
 {
-    if(((BigInteger &)value).isNegative())
+    if(value.isNegative())
         throw std::runtime_error("value cannot be a negative");
     BigInteger xf = BigInteger(1u);
     BigInteger xl = BigInteger(1u);
@@ -1515,112 +1845,115 @@ BigInteger BigInteger::squareroot(const BigInteger &value)
 }
 BigInteger BigInteger::modInverse(const BigInteger &value, const BigInteger &modulus)
 {
-    if(((BigInteger&)value).isOne())
+    if (value.isOne())
         return BigInteger(1u);
-    if(((BigInteger&)value).isNegative() || ((BigInteger&)value).isZero())
-        throw std::runtime_error("value must be positive.");
-    if(((BigInteger&)modulus).isNegative() || ((BigInteger&)modulus).isZero())
-        throw std::runtime_error("Modulus must be positive.");
 
-    BigInteger x1 = BigInteger(0u), x2 = modulus, y1 = BigInteger(1u), y2 = value;
+    BigInteger x1 = BigInteger::zero(), x2 = modulus.clone(), y1 = BigInteger::one(), y2 = value.clone();
 
     BigInteger t1, t2, q = BigInteger::divrem(x2, y2, t2);
     q.negate();
-    t1 = q;
+    t1 = q.clone();
 
     while (!y2.isOne())
     {
-        if (t2._sign == 0)
-            return BigInteger(0u);
+        if (t2.isZero())
+            return BigInteger::zero();
 
-        x1 = y1; x2 = y2;
-        y1 = t1; y2 = t2;
+        x1 = y1.clone(); x2 = y2.clone();
+        y1 = t1.clone(); y2 = t2.clone();
         q = BigInteger::divrem(x2, y2, t2);
-        q.mul(y1);
-        t1 = x1.sub(q);
+
+        t1 = x1 - q * y1;
     }
-    if (y1._sign == -1)
-        return (y1.add(modulus));
+    if (y1.sign() == -1)
+        return y1 + modulus;
     else
         return y1;
 }
 
+BigInteger BigInteger::square(const BigInteger &value)
+{
+    return value.clone().square();
+}
+
 BigInteger::operator int() const
 {
-    uint f_digit = this->_digits[0];
+    uint f_digit = this->_pimpl->_digits[0];
     f_digit -= (f_digit > 0x7FFFFFFF) * 0x7FFFFFFF;
-    return (int)f_digit * this->_sign;
+    return (int)f_digit * this->_pimpl->_sign;
 }
 BigInteger::operator uint() const
 {
-    uint f_digit = this->_digits[0];
-    return (uint)(f_digit * this->_sign);
+    uint f_digit = this->_pimpl->_digits[0];
+    return (uint)(f_digit * this->_pimpl->_sign);
 }
 BigInteger::operator long() const
 {
-    if(this->_digitLength > 1){
-        ulong dig = ((ulong *)this->_digits)[0];
+    if(this->_pimpl->_digit_length > 1){
+        ulong dig = ((ulong *)this->_pimpl->_digits)[0];
         dig -= (dig > 0x7FFFFFFFFFFFFFFF) * 0x7FFFFFFFFFFFFFFF;
-        return (long)dig * this->_sign;
+        return (long)dig * this->_pimpl->_sign;
     } else {
-        long f_digit = this->_digits[0];
-        return f_digit * this->_sign;
+        long f_digit = this->_pimpl->_digits[0];
+        return f_digit * this->_pimpl->_sign;
     }
 }
 BigInteger::operator ulong() const
 {
-    if(this->_digitLength > 1){
-        ulong dig = ((ulong *)this->_digits)[0];
-        return (ulong)dig * this->_sign;
+    if(this->_pimpl->_digit_length > 1){
+        ulong dig = ((ulong *)this->_pimpl->_digits)[0];
+        return (ulong)dig * this->_pimpl->_sign;
     } else {
-        ulong f_digit = this->_digits[0];
-        return f_digit * this->_sign;
+        ulong f_digit = this->_pimpl->_digits[0];
+        return f_digit * this->_pimpl->_sign;
     }
 }
 
 BigInteger::BigInteger(uint *digits, int length, int sign, bool internal)
 {
+    this->_pimpl = std::shared_ptr<pimpl>(new pimpl);
+
     if(internal){
         if(length == 0){
             delete[] digits;
-            this->_digitLength = 1;
-            this->_digits = new uint[1] { 0 };
-            this->_sign = 0;
+            this->_pimpl->_digit_length = 1;
+            this->_pimpl->_digits = new uint[1] { 0 };
+            this->_pimpl->_sign = 0;
         } else {
             if(length == 1 && digits[0] == 0)
-                this->_sign = 0;
+                this->_pimpl->_sign = 0;
             else
-                this->_sign = sign;
+                this->_pimpl->_sign = sign;
             if(sign == 0){
-                this->_digitLength = 1;
-                this->_digits = new uint[1] { 0 };
-                this->_sign = 0;
+                this->_pimpl->_digit_length = 1;
+                this->_pimpl->_digits = new uint[1] { 0 };
+                this->_pimpl->_sign = 0;
             } else{
-                this->_digits = digits;
-                this->_digitLength = length;
+                this->_pimpl->_digits = digits;
+                this->_pimpl->_digit_length = length;
             }
         }
     } else {
-        if(!length){
-            this->_sign = 0;
-            this->_digitLength = length;
-            this->_digits = new uint[1] { 0 };
+        if(length == 0){
+            this->_pimpl->_sign = 0;
+            this->_pimpl->_digit_length = length;
+            this->_pimpl->_digits = new uint[1] { 0 };
         } else {
             while(digits[length - 1] == 0 && length > 1)
                 length--;
             if(length == 1 && digits[0] == 0)
-                this->_sign = 0;
+                this->_pimpl->_sign = 0;
             else
-                this->_sign = sign;
+                this->_pimpl->_sign = sign;
             if(sign == 0){
-                this->_digitLength = 1;
-                this->_digits = new uint[1] { 0 };
-                this->_sign = 0;
+                this->_pimpl->_digit_length = 1;
+                this->_pimpl->_digits = new uint[1] { 0 };
+                this->_pimpl->_sign = 0;
             } else {
-                this->_digitLength = length;
-                this->_digits = new uint[length];
-                for(int i = 0; i < length; i++)
-                    this->_digits[i] = digits[i];
+                this->_pimpl->_digit_length = length;
+                this->_pimpl->_digits = new uint[length];
+                for(int i = 0; i < length; ++i)
+                    this->_pimpl->_digits[i] = digits[i];
             }
         }
     }

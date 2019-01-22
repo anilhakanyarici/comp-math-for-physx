@@ -36,7 +36,8 @@ SOURCES += \
     Algebra/vector.cpp \
     Algebra/vector4.cpp \
     Algebra/matrix4x4.cpp \
-    biginteger.cpp
+    biginteger.cpp \
+    drbg.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -61,4 +62,5 @@ HEADERS += \
     Algebra/vector.h \
     Algebra/vector4.h \
     Algebra/matrix4x4.h \
-    biginteger.h
+    biginteger.h \
+    drbg.h

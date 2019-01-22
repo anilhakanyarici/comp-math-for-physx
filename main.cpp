@@ -17,7 +17,6 @@
 #include "Algebra/matrix4x4.h"
 #include "Algebra/matrix.h"
 
-
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
